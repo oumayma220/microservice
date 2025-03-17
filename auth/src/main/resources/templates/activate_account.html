@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activation du Compte</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            font-size: 28px;
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 15px;
+        }
+        p {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.6;
+        }
+        .activation-code {
+            font-size: 36px;
+            font-weight: bold;
+            color: #d9534f;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f4f4f4;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        .activation-link {
+            margin-top: 30px;
+        }
+        .activation-link a {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 18px;
+            transition: background-color 0.3s;
+        }
+        .activation-link a:hover {
+            background-color: #0056b3;
+        }
+        .footer {
+            margin-top: 50px;
+            font-size: 14px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Activation du Compte</h1>
+    <p class="greeting">Bonjour, <span th:text="${username}"></span> !</p>
+    <p>Merci pour votre inscription ! Veuillez utiliser le code d'activation suivant pour activer votre compte :</p>
+    <div class="activation-code">
+        <span th:text="${activation_code}"></span>
+    </div>
+
+    <div class="footer">
+        <p>Si vous n'avez pas demandé de compte, veuillez ignorer cet email.</p>
+    </div>
+</div>
+</body>
+</html>
