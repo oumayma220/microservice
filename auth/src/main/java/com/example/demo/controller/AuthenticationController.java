@@ -2,13 +2,20 @@ package com.example.demo.controller;
 
 import com.example.demo.dao.entity.User;
 import com.example.demo.dao.entity.UserDTO;
+import com.example.demo.dao.repository.UserRepository;
+import com.example.demo.request.AuthenticationRequest;
+import com.example.demo.response.AuthenticationResponse;
+import com.example.demo.request.RegistrationRequest;
+import com.example.demo.security.JwtService;
 import com.example.demo.service.AuthenticationService;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,10 +23,16 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("auth")
 public class AuthenticationController {
     private final AuthenticationService service ;
+    private final JwtService jwtService;
+    @Autowired
+    private UserRepository userRepository ;
 
-    public AuthenticationController(AuthenticationService service) {
+    public AuthenticationController(AuthenticationService service, JwtService jwtService, UserRepository userRepository) {
         this.service = service;
+        this.jwtService = jwtService;
+        this.userRepository = userRepository;
     }
+
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -54,7 +67,7 @@ public class AuthenticationController {
             return ResponseEntity.ok("Un code de réinitialisation a été envoyé à votre email.");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (MessagingException e) { // Capture l'erreur d'envoi de l'email
+        } catch (MessagingException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Une erreur est survenue lors de l'envoi de l'e-mail.");
         }
@@ -80,12 +93,27 @@ public class AuthenticationController {
         User user = service.getById(id);
         return ResponseEntity.ok(service.convertToDTO(user));
     }
+    @GetMapping("/validate-token")
+    public ResponseEntity<Boolean> validateToken(@RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.ok(false);
+            }
 
+            String jwt = authHeader.substring(7);
+            String userEmail = jwtService.extractUsername(jwt);
 
+            if (userEmail != null) {
+                UserDetails userDetails = userRepository.findByEmail(userEmail)
+                        .orElse(null);
 
-
-
-
-
-
+                if (userDetails != null) {
+                    return ResponseEntity.ok(jwtService.isTokenValid(jwt, userDetails));
+                }
+            }
+            return ResponseEntity.ok(false);
+        } catch (Exception e) {
+            return ResponseEntity.ok(false);
+        }
+    }
 }

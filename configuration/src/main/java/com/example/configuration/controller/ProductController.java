@@ -3,7 +3,7 @@ package com.example.configuration.controller;
 import com.example.configuration.dao.entity.Product;
 import com.example.configuration.dao.entity.RestAPIConfiguration;
 import com.example.configuration.dao.entity.Tiers;
-import com.example.configuration.dto.TiersRequest;
+import com.example.configuration.request.TiersRequest;
 import com.example.configuration.service.ProductMappingService;
 import com.example.configuration.service.TiersConfigurationService;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,8 +1,8 @@
 package com.example.demo.service;
-import com.example.demo.controller.AuthenticationRequest;
-import com.example.demo.controller.AuthenticationResponse;
-import com.example.demo.controller.RegistrationRequest;
-import com.example.demo.controller.UpdateEmployeeRequest;
+import com.example.demo.request.AuthenticationRequest;
+import com.example.demo.response.AuthenticationResponse;
+import com.example.demo.request.RegistrationRequest;
+import com.example.demo.request.UpdateEmployeeRequest;
 import com.example.demo.dao.entity.*;
 import com.example.demo.dao.repository.TokenRepository;
 import com.example.demo.dao.repository.UserRepository;

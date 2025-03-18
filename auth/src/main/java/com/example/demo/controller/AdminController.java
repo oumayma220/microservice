@@ -1,6 +1,8 @@
 package com.example.demo.controller;
 
 import com.example.demo.dao.entity.User;
+import com.example.demo.request.RegistrationRequest;
+import com.example.demo.request.UpdateEmployeeRequest;
 import com.example.demo.service.AuthenticationService;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;

@@ -1,5 +1,6 @@
-package com.example.configuration.dto;
+package com.example.configuration.request;
 
+import com.example.configuration.dto.FieldMappingDTO;
 import lombok.Data;
 
 import java.util.List;
