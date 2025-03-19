@@ -76,6 +76,10 @@ public class MyTechConfig {
         addFieldMapping(apiMethod, "$.retail_price", "price");
         addFieldMapping(apiMethod, "$.short_summary", "description");
         addFieldMapping(apiMethod, "$.product_url", "url");
+        addFieldMapping(apiMethod, "$.referenceNo", "reference");
+
+
+
     }
 
     private void addFieldMapping(APIMethod apiMethod, String source, String target) {

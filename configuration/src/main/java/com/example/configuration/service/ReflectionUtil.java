@@ -36,9 +36,7 @@ public class ReflectionUtil {
         } else if (fieldType.equals(String.class)) {
             return stringValue;
         }
-
-        // add more types as needed
-        return value; // fallback
+        return value;
     }
 
 }

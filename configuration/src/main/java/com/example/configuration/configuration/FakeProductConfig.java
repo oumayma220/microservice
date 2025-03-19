@@ -88,6 +88,8 @@ public class FakeProductConfig {
         addFieldMapping(apiMethod, "$.description", "description");
         addFieldMapping(apiMethod, "$.price", "price");
         addFieldMapping(apiMethod, "$.image", "url");
+        addFieldMapping(apiMethod, "$.ref", "reference");
+
     }
 
     private void addFieldMapping(APIMethod apiMethod, String source, String target) {

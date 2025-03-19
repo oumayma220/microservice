@@ -88,6 +88,8 @@ public class TunisiaNetConfig {
         addFieldMapping(apiMethod, "description", "description");
         addFieldMapping(apiMethod, "price", "price");
         addFieldMapping(apiMethod, "url", "url");
+        addFieldMapping(apiMethod, "productReferenceNo", "reference");
+
     }
 
     private void addFieldMapping(APIMethod apiMethod, String source, String target) {

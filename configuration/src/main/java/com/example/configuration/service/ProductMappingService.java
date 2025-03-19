@@ -56,25 +56,14 @@ public class ProductMappingService {
         if (apiMethod.getEndpoint() == null || apiMethod.getEndpoint().isEmpty()) {
             throw new RuntimeException("Endpoint not defined in API method for config: " + configName);
         }
-        //ajoutt
         List<FieldMapping> fieldMappings = apiMethod.getFieldMappings();
 
         if (fieldMappings == null || fieldMappings.isEmpty()) {
             throw new RuntimeException("No FieldMappings defined for this API method.");
         }
-
-        // ✅ Extraire le type : on suppose que tous les mappings ont le même type
-        String mappingType = fieldMappings.get(0).getType(); // Ex : "jsonPath" ou "reflection"
-
+        String mappingType = fieldMappings.get(0).getType();
         System.out.println("Mapping type for API Method: " + mappingType);
-        //finn
 
-     //   if (apiMethod.isPaginated()) {
-      //      return fetchPaginatedProductsJsonPath(config, apiMethod);
-      //  } else {
-       //     return fetchSimpleProductsJsonPath(config, apiMethod);
-     //   }
-  //  }
         if ("jsonPath".equalsIgnoreCase(mappingType)) {
             if (apiMethod.isPaginated()) {
                 return fetchPaginatedProductsJsonPath(config, apiMethod);
@@ -193,7 +182,6 @@ public class ProductMappingService {
 
         if (apiMethod.getContentFieldInResponse() != null && !apiMethod.getContentFieldInResponse().isEmpty()) {
             try {
-                // Utiliser JsonPath pour extraire les données selon le chemin spécifié
                 productsData = JsonPath.read(responseJson, apiMethod.getContentFieldInResponse());
                 logger.debug("Données extraites avec JsonPath : {}", productsData.size());
             } catch (Exception e) {
@@ -202,7 +190,6 @@ public class ProductMappingService {
                 throw new RuntimeException("Erreur lors de l'extraction des données avec JsonPath", e);
             }
         } else {
-            // Si aucun champ spécifique n'est indiqué, essayer de traiter la réponse directement
             if (apiResponse instanceof List) {
                 productsData = (List<Map<String, Object>>) apiResponse;
             } else {
@@ -227,7 +214,7 @@ public class ProductMappingService {
         List<Product> allProducts = new ArrayList<>();
         int page = 0;
         int size = apiMethod.getPageSize();
-        int totalPages = 1;  // sera ajusté après la première réponse
+        int totalPages = 1;
 
         logger.info("Démarrage de la récupération paginée depuis {}", config.getUrl());
 
@@ -259,7 +246,6 @@ public class ProductMappingService {
 
                 pageResults = (List<Map<String, Object>>) response.get(apiMethod.getContentFieldInResponse());
             }
-            // CAS 2 : contentField est vide ou null => la réponse entière est une liste
             else {
                 try {
                     pageResults = (List<Map<String, Object>>) (Object) response;
@@ -277,7 +263,6 @@ public class ProductMappingService {
                 }
             }
 
-            // Gestion de la pagination : vérifier s'il y a un champ "totalPages"
             if (apiMethod.getTotalPagesFieldInResponse() != null) {
                 totalPages = ((Number) response.get(apiMethod.getTotalPagesFieldInResponse())).intValue();
             } else {
@@ -309,7 +294,6 @@ public class ProductMappingService {
 
         List<Map<String, Object>> productsData = new ArrayList<>();
 
-        // Si ContentFieldInResponse est défini, on va chercher dedans
         if (apiMethod.getContentFieldInResponse() != null && !apiMethod.getContentFieldInResponse().isEmpty()) {
             if (!(apiResponse instanceof Map)) {
                 logger.error("Réponse API inattendue. Un Map était attendu pour accéder à '{}'", apiMethod.getContentFieldInResponse());
@@ -327,7 +311,6 @@ public class ProductMappingService {
                 throw new RuntimeException("Le champ '" + apiMethod.getContentFieldInResponse() + "' ne contient pas une liste.");
             }
         } else {
-            // Si aucun ContentFieldInResponse, on considère que la réponse est directement une liste
             if (apiResponse instanceof List) {
                 productsData = (List<Map<String, Object>>) apiResponse;
             } else {

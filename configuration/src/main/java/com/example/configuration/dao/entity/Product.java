@@ -15,4 +15,5 @@ public class Product {
     private String description;
     private String url;
     private Double  price;
+    private String reference ;
 }

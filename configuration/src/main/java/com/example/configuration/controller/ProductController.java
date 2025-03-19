@@ -36,7 +36,7 @@ public class ProductController {
         } catch (RuntimeException ex) {
             return ResponseEntity
                     .badRequest()
-                    .body(null); // Tu peux créer une structure d'erreur plus propre si besoin
+                    .body(null);
         }
     }
 
@@ -79,7 +79,6 @@ public class ProductController {
         return ResponseEntity.ok(configs);
     }
 
-    // OU par nom de tiers
     @GetMapping("/configs")
     public ResponseEntity<List<RestAPIConfiguration>> getConfigsByTiersNom(@RequestParam String nomTiers) {
         List<RestAPIConfiguration> configs = tiersConfigurationService.getConfigurationsByTiersNom(nomTiers);
@@ -100,7 +99,7 @@ public class ProductController {
     @GetMapping("/current")
     public ResponseEntity<?> getCurrentTenantId() {
         try {
-            Integer tenantId = tiersConfigurationService.getCurrentTenantId(); // ou tenantService.getCurrentTenantId();
+            Integer tenantId = tiersConfigurationService.getCurrentTenantId();
             return ResponseEntity.ok(Map.of("tenantId", tenantId));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

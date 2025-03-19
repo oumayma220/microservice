@@ -8,7 +8,6 @@ import net.minidev.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Field;
 import java.util.Map;
 
 
@@ -22,20 +21,13 @@ import java.util.Map;
             String target = fieldMapping.getTarget();
 
             try {
-                // Convert the source pattern for direct property access if needed
                 String effectiveSource = source;
-              //  if (source.startsWith("$.[*].")) {
-              //      effectiveSource = "$." + source.substring(5);
-              //  }
 
-                // Try direct access from the map if JsonPath fails
                 Object value;
                 try {
-                    // First try with JsonPath
                     String json = objectMapper.writeValueAsString(data);
                     value = JsonPath.read(json, effectiveSource);
 
-                    // Handle array result
                     if (value instanceof JSONArray) {
                         JSONArray array = (JSONArray) value;
                         if (!array.isEmpty()) {
@@ -45,7 +37,6 @@ import java.util.Map;
                         }
                     }
                 } catch (Exception e) {
-                    // Fallback: try direct property access if JsonPath fails
                     logger.debug("JsonPath failed, trying direct property access for: {}", source);
                     String propertyName = source.substring(source.lastIndexOf('.') + 1);
                     if (propertyName.endsWith("]")) {
@@ -54,7 +45,6 @@ import java.util.Map;
                     value = data.get(propertyName);
                 }
 
-                // Set the value if not null
                 if (value != null) {
                     ReflectionUtil.setFieldValue(product, target, value);
                     logger.debug("Successfully mapped '{}' to field '{}' with value: {}", source, target, value);

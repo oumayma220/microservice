@@ -168,6 +168,7 @@ public class TiersConfigurationService {
             fieldMapping.setSource(mapping.getSource());
             fieldMapping.setTarget(mapping.getTarget());
             fieldMapping.setType(mapping.getType());
+            fieldMapping.setTenantid(getCurrentTenantId());
             fieldMappingRepository.save(fieldMapping);
         });
 
