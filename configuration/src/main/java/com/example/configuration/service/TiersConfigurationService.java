@@ -5,9 +5,12 @@ import com.example.configuration.dao.repository.APIMethodRepository;
 import com.example.configuration.dao.repository.FieldMappingRepository;
 import com.example.configuration.dao.repository.RestAPIConfigRepository;
 import com.example.configuration.dao.repository.TiersRepository;
+import com.example.configuration.dto.UserDTO;
 import com.example.configuration.request.TiersRequest;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -29,13 +32,16 @@ public class TiersConfigurationService {
 
     @Transactional
     public Tiers createTiersWithConfig(TiersRequest request) {
-        Tiers tiers = getOrCreateTiers(request.getNom());
+        Integer currentTenantId  = getCurrentTenantId();
+
+        Tiers tiers = getOrCreateTiers(request.getNom(),currentTenantId );
 
         RestAPIConfiguration apiConfig = getOrCreateRestAPIConfig(
                 tiers,
                 request.getConfigName(),
                 request.getUrl(),
-                request.getHeaders()
+                request.getHeaders(),
+                currentTenantId
         );
 
         APIMethod apiMethod = getOrCreateAPIMethod(
@@ -47,31 +53,34 @@ public class TiersConfigurationService {
                 request.getPaginationParamName(),
                 request.getPageSizeParamName(),
                 request.getTotalPagesFieldInResponse(),
-                request.getContentFieldInResponse()
+                request.getContentFieldInResponse(),
+                currentTenantId
         );
 
         request.getFieldMappings().forEach(mapping -> {
-            addFieldMapping(apiMethod, mapping.getSource(), mapping.getTarget(), mapping.getType());
+            addFieldMapping(apiMethod, mapping.getSource(), mapping.getTarget(), mapping.getType(), currentTenantId);
         });
 
         return tiers;
     }
 
-    private Tiers getOrCreateTiers(String name) {
+    private Tiers getOrCreateTiers(String name ,Integer tenantid) {
         return tiersRepository.findByNom(name).orElseGet(() -> {
             Tiers tiers = new Tiers();
             tiers.setNom(name);
+            tiers.setTenantid(tenantid);
+
             return tiersRepository.save(tiers);
         });
     }
-
-    private RestAPIConfiguration getOrCreateRestAPIConfig(Tiers tiers, String configName, String url, String headers) {
+    private RestAPIConfiguration getOrCreateRestAPIConfig(Tiers tiers, String configName, String url, String headers ,Integer tenantid) {
         return restAPIConfigRepository.findByConfigName(configName).orElseGet(() -> {
             RestAPIConfiguration config = new RestAPIConfiguration();
             config.setConfigName(configName);
             config.setTiers(tiers);
             config.setUrl(url);
             config.setHeaders(headers);
+            config.setTenantid(tenantid);
             return restAPIConfigRepository.save(config);
         });
     }
@@ -85,7 +94,8 @@ public class TiersConfigurationService {
             String paginationParamName,
             String pageSizeParamName,
             String totalPagesFieldInResponse,
-            String contentFieldInResponse
+            String contentFieldInResponse,
+            Integer tenantid
     ) {
         return apiMethodRepository.findByHttpMethodAndEndpoint(httpMethod, endpoint).orElseGet(() -> {
             APIMethod apiMethod = new APIMethod();
@@ -101,17 +111,19 @@ public class TiersConfigurationService {
                 apiMethod.setPageSize(10);
                 apiMethod.setTotalPagesFieldInResponse(totalPagesFieldInResponse);
             }
+            apiMethod.setTenantid(tenantid);
             return apiMethodRepository.save(apiMethod);
         });
     }
 
-    private void addFieldMapping(APIMethod apiMethod, String source, String target, String type) {
+    private void addFieldMapping(APIMethod apiMethod, String source, String target, String type , Integer tenantid) {
         if (fieldMappingRepository.findByApiMethodAndSourceAndTarget(apiMethod, source, target).isEmpty()) {
             FieldMapping fieldMapping = new FieldMapping();
             fieldMapping.setApiMethod(apiMethod);
             fieldMapping.setSource(source);
             fieldMapping.setTarget(target);
             fieldMapping.setType(type);
+            fieldMapping.setTenantid(tenantid);
             fieldMappingRepository.save(fieldMapping);
         }
     }
@@ -119,6 +131,7 @@ public class TiersConfigurationService {
     public Tiers updateTiersWithConfig(String tiersName, String configName, TiersRequest request) {
 
         Tiers tiers = tiersRepository.findByNom(tiersName)
+
                 .orElseThrow(() -> new RuntimeException("Tiers not found with name: " + tiersName));
 
         RestAPIConfiguration apiConfig = restAPIConfigRepository.findByTiersAndConfigName(tiers, configName)
@@ -162,14 +175,18 @@ public class TiersConfigurationService {
     }
 
     public List<Tiers> getAllTiers() {
-        return tiersRepository.findAll();
+
+        Integer currentTenantId = getCurrentTenantId();
+        return tiersRepository.findByTenantid(currentTenantId);
     }
     public List<RestAPIConfiguration> getConfigurationsByTiersId(Long tiersId) {
-        return restAPIConfigRepository.findByTiers_Id(tiersId);
+        Integer currentTenantId = getCurrentTenantId();
+        return restAPIConfigRepository.findByTiers_IdAndTenantid(tiersId, currentTenantId);
     }
 
     public List<RestAPIConfiguration> getConfigurationsByTiersNom(String nomTiers) {
-        return restAPIConfigRepository.findByTiers_Nom(nomTiers);
+        Integer currentTenantId = getCurrentTenantId();
+        return restAPIConfigRepository.findByTiers_NomAndTenantid(nomTiers, currentTenantId);
     }
     @Transactional
     public void deleteConfigurationById(Long configId) {
@@ -191,6 +208,14 @@ public class TiersConfigurationService {
         apiMethodOpt.ifPresent(apiMethodRepository::delete);
 
         restAPIConfigRepository.delete(config);
+    }
+    public Integer getCurrentTenantId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserDTO) {
+            UserDTO userDTO = (UserDTO) authentication.getPrincipal();
+            return userDTO.getTenantid();
+        }
+        throw new RuntimeException("User not authenticated or tenant information missing");
     }
 
 

@@ -21,4 +21,6 @@ public abstract class APIConfiguration {
     @ManyToOne
     @JsonBackReference
     private Tiers tiers;
+    private Integer tenantid;
+
 }

@@ -25,6 +25,8 @@ public class APIMethod {
     private String endpoint;
 
     private String headers;
+    private Integer tenantid;
+
 
     @ManyToOne
     @JsonBackReference

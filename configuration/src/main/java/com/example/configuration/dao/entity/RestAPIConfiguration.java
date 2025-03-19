@@ -26,4 +26,5 @@ public class RestAPIConfiguration extends APIConfiguration {
     private List<APIMethod> apiMethods;
 
 
+
 }

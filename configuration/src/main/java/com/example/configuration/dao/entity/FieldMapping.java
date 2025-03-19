@@ -20,6 +20,8 @@ public class FieldMapping {
     private String target;
     private String source;
     private String type; // "reflection" ou "jsonPath"
+    private Integer tenantid;
+
 
 
     @ManyToOne

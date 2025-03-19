@@ -3,6 +3,7 @@ package com.example.configuration.controller;
 import com.example.configuration.dao.entity.Product;
 import com.example.configuration.dao.entity.RestAPIConfiguration;
 import com.example.configuration.dao.entity.Tiers;
+import com.example.configuration.dto.TiersDTO;
 import com.example.configuration.request.TiersRequest;
 import com.example.configuration.service.ProductMappingService;
 import com.example.configuration.service.TiersConfigurationService;
@@ -12,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+
 @CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping("/config")
 
@@ -43,15 +46,16 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
     @PostMapping("/api/tiers")
-    public ResponseEntity<Tiers> createTiersWithConfig(@RequestBody TiersRequest request) {
+    public ResponseEntity<TiersDTO> createTiersWithConfig(@RequestBody TiersRequest request) {
         try {
             Tiers createdTiers = tiersConfigurationService.createTiersWithConfig(request);
-            return ResponseEntity.ok(createdTiers);
+            TiersDTO response = new TiersDTO(createdTiers);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            // Gestion d'erreur basique, à améliorer selon le cas
             return ResponseEntity.badRequest().build();
         }
     }
+
     @PutMapping("/api/tiers/{tiersName}/config/{configName}")
     public ResponseEntity<Tiers> updateTiersWithConfig(
             @PathVariable String tiersName,
@@ -91,6 +95,16 @@ public class ProductController {
             return ResponseEntity.ok("Configuration supprimée avec succès !");
         } catch (RuntimeException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        }
+    }
+    @GetMapping("/current")
+    public ResponseEntity<?> getCurrentTenantId() {
+        try {
+            Integer tenantId = tiersConfigurationService.getCurrentTenantId(); // ou tenantService.getCurrentTenantId();
+            return ResponseEntity.ok(Map.of("tenantId", tenantId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 }
