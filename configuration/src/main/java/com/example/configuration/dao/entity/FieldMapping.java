@@ -19,7 +19,7 @@ public class FieldMapping {
     private Long id;
     private String target;
     private String source;
-    private String type; // "reflection" ou "jsonPath"
+  //  private String type;
     private Integer tenantid;
 
 

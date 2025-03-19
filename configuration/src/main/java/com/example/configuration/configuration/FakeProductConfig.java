@@ -79,6 +79,7 @@ public class FakeProductConfig {
             apiMethod.setPageSize(10);
             apiMethod.setTotalPagesFieldInResponse("$.totalPages");
             apiMethod.setContentFieldInResponse("$.content[*]");
+            apiMethod.setType("jsonPath");
             return apiMethodRepository.save(apiMethod);
         });
     }
@@ -95,7 +96,6 @@ public class FakeProductConfig {
     private void addFieldMapping(APIMethod apiMethod, String source, String target) {
         if (fieldMappingRepository.findByApiMethodAndSourceAndTarget(apiMethod, source, target).isEmpty()) {
             FieldMapping fieldMapping = new FieldMapping();
-            fieldMapping.setType("jsonPath");
             fieldMapping.setSource(source);
             fieldMapping.setTarget(target);
             fieldMapping.setApiMethod(apiMethod);

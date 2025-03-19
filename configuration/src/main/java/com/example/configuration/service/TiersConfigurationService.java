@@ -54,11 +54,12 @@ public class TiersConfigurationService {
                 request.getPageSizeParamName(),
                 request.getTotalPagesFieldInResponse(),
                 request.getContentFieldInResponse(),
+                request.getType(),
                 currentTenantId
         );
 
         request.getFieldMappings().forEach(mapping -> {
-            addFieldMapping(apiMethod, mapping.getSource(), mapping.getTarget(), mapping.getType(), currentTenantId);
+            addFieldMapping(apiMethod, mapping.getSource(), mapping.getTarget(), currentTenantId);
         });
 
         return tiers;
@@ -95,6 +96,7 @@ public class TiersConfigurationService {
             String pageSizeParamName,
             String totalPagesFieldInResponse,
             String contentFieldInResponse,
+            String type,
             Integer tenantid
     ) {
         return apiMethodRepository.findByHttpMethodAndEndpoint(httpMethod, endpoint).orElseGet(() -> {
@@ -105,6 +107,7 @@ public class TiersConfigurationService {
             apiMethod.setRestAPIConfig(restAPIConfig);
             apiMethod.setPaginated(paginated);
             apiMethod.setContentFieldInResponse(contentFieldInResponse);
+            apiMethod.setType(type);
             if (paginated) {
                 apiMethod.setPaginationParamName(paginationParamName);
                 apiMethod.setPageSizeParamName(pageSizeParamName);
@@ -116,34 +119,32 @@ public class TiersConfigurationService {
         });
     }
 
-    private void addFieldMapping(APIMethod apiMethod, String source, String target, String type , Integer tenantid) {
+    private void addFieldMapping(APIMethod apiMethod, String source, String target,  Integer tenantid) {
         if (fieldMappingRepository.findByApiMethodAndSourceAndTarget(apiMethod, source, target).isEmpty()) {
             FieldMapping fieldMapping = new FieldMapping();
             fieldMapping.setApiMethod(apiMethod);
             fieldMapping.setSource(source);
             fieldMapping.setTarget(target);
-            fieldMapping.setType(type);
+           // fieldMapping.setType(type);
             fieldMapping.setTenantid(tenantid);
             fieldMappingRepository.save(fieldMapping);
         }
     }
     @Transactional
     public Tiers updateTiersWithConfig(String tiersName, String configName, TiersRequest request) {
-
         Tiers tiers = tiersRepository.findByNom(tiersName)
-
                 .orElseThrow(() -> new RuntimeException("Tiers not found with name: " + tiersName));
-
         RestAPIConfiguration apiConfig = restAPIConfigRepository.findByTiersAndConfigName(tiers, configName)
                 .orElseThrow(() -> new RuntimeException("API Configuration not found for: " + configName));
-
         apiConfig.setUrl(request.getUrl());
         apiConfig.setHeaders(request.getHeaders());
         restAPIConfigRepository.save(apiConfig);
 
+        // 4. Recherche de la méthode API liée à cette configuration
         APIMethod apiMethod = apiMethodRepository.findByRestAPIConfig(apiConfig)
                 .orElseThrow(() -> new RuntimeException("API Method not found for config: " + configName));
 
+        // 5. Mise à jour des détails de l'API method
         apiMethod.setHttpMethod(request.getHttpMethod());
         apiMethod.setEndpoint(request.getEndpoint());
         apiMethod.setHeaders(request.getMethodHeaders());
@@ -152,29 +153,36 @@ public class TiersConfigurationService {
         if (request.isPaginated()) {
             apiMethod.setPaginationParamName(request.getPaginationParamName());
             apiMethod.setPageSizeParamName(request.getPageSizeParamName());
-            apiMethod.setPageSize(10);
+            apiMethod.setPageSize(10); // Tu peux rendre ça dynamique si besoin
             apiMethod.setTotalPagesFieldInResponse(request.getTotalPagesFieldInResponse());
+        } else {
+            apiMethod.setPaginationParamName(null);
+            apiMethod.setPageSizeParamName(null);
+            apiMethod.setPageSize(null);
+            apiMethod.setTotalPagesFieldInResponse(null);
+        }
+        apiMethod.setType(request.getType());
+        apiMethodRepository.save(apiMethod);
+        List<FieldMapping> existingMappings = fieldMappingRepository.findByApiMethod(apiMethod);
+
+        if (!existingMappings.isEmpty()) {
+            fieldMappingRepository.deleteAll(existingMappings);
         }
 
-        apiMethodRepository.save(apiMethod);
-
-        // Supprime les anciens mappings et ajoute les nouveaux
-        List<FieldMapping> existingMappings = fieldMappingRepository.findByApiMethod(apiMethod);
-        fieldMappingRepository.deleteAll(existingMappings);
+        Integer currentTenantId = getCurrentTenantId();
 
         request.getFieldMappings().forEach(mapping -> {
             FieldMapping fieldMapping = new FieldMapping();
             fieldMapping.setApiMethod(apiMethod);
             fieldMapping.setSource(mapping.getSource());
             fieldMapping.setTarget(mapping.getTarget());
-            fieldMapping.setType(mapping.getType());
-            fieldMapping.setTenantid(getCurrentTenantId());
+            fieldMapping.setTenantid(currentTenantId);
+
             fieldMappingRepository.save(fieldMapping);
         });
 
         return tiers;
     }
-
     public List<Tiers> getAllTiers() {
 
         Integer currentTenantId = getCurrentTenantId();
@@ -184,7 +192,6 @@ public class TiersConfigurationService {
         Integer currentTenantId = getCurrentTenantId();
         return restAPIConfigRepository.findByTiers_IdAndTenantid(tiersId, currentTenantId);
     }
-
     public List<RestAPIConfiguration> getConfigurationsByTiersNom(String nomTiers) {
         Integer currentTenantId = getCurrentTenantId();
         return restAPIConfigRepository.findByTiers_NomAndTenantid(nomTiers, currentTenantId);
@@ -198,8 +205,6 @@ public class TiersConfigurationService {
         apiMethodOpt.ifPresent(apiMethodRepository::delete);
         restAPIConfigRepository.delete(config);
     }
-
-
     @Transactional
     public void deleteConfigurationByTiers(Long tiersId, Long configId) {
         RestAPIConfiguration config = restAPIConfigRepository.findByIdAndTiers_Id(configId, tiersId)

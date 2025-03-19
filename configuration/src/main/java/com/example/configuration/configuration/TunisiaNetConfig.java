@@ -79,6 +79,7 @@ public class TunisiaNetConfig {
             apiMethod.setPageSize(10);
             apiMethod.setTotalPagesFieldInResponse("totalPages");
             apiMethod.setContentFieldInResponse("content");
+            apiMethod.setType("reflection");
             return apiMethodRepository.save(apiMethod);
         });
     }
@@ -95,7 +96,6 @@ public class TunisiaNetConfig {
     private void addFieldMapping(APIMethod apiMethod, String source, String target) {
         if (fieldMappingRepository.findByApiMethodAndSourceAndTarget(apiMethod, source, target).isEmpty()) {
             FieldMapping fieldMapping = new FieldMapping();
-            fieldMapping.setType("reflection");
             fieldMapping.setSource(source);
             fieldMapping.setTarget(target);
             fieldMapping.setApiMethod(apiMethod);

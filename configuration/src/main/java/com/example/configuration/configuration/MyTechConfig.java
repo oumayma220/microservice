@@ -67,6 +67,7 @@ public class MyTechConfig {
             apiMethod.setHeaders(headers);
             apiMethod.setRestAPIConfig(restAPIConfig);
             apiMethod.setPaginated(false);
+            apiMethod.setType("jsonPath");
             return apiMethodRepository.save(apiMethod);
         });
     }
@@ -85,7 +86,6 @@ public class MyTechConfig {
     private void addFieldMapping(APIMethod apiMethod, String source, String target) {
         if (fieldMappingRepository.findByApiMethodAndSourceAndTarget(apiMethod, source, target).isEmpty()) {
             FieldMapping fieldMapping = new FieldMapping();
-            fieldMapping.setType("jsonPath");
             fieldMapping.setSource(source);
             fieldMapping.setTarget(target);
             fieldMapping.setApiMethod(apiMethod);

@@ -25,8 +25,9 @@ public class APIMethod {
     private String endpoint;
 
     private String headers;
-    private Integer tenantid;
+    private String type ; // "reflection" ou "jsonPath"
 
+    private Integer tenantid;
 
     @ManyToOne
     @JsonBackReference

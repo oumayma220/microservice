@@ -38,31 +38,40 @@ public class ProductMappingService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<Product> importProducts(String configName, String endpoint) {
-
         RestAPIConfiguration config = restAPIConfigRepository.findByConfigName(configName)
                 .orElseThrow(() -> new RuntimeException("API Configuration not found: " + configName));
-
         List<APIMethod> apiMethods = config.getApiMethods();
-
         if (apiMethods == null || apiMethods.isEmpty()) {
+            logger.warn("No API Methods found for config: {}", configName);
             throw new RuntimeException("No API Methods found for config: " + configName);
         }
-
         APIMethod apiMethod = apiMethods.stream()
                 .filter(method -> endpoint.equals(method.getEndpoint()))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("No API Method found for endpoint: " + endpoint));
 
         if (apiMethod.getEndpoint() == null || apiMethod.getEndpoint().isEmpty()) {
+            logger.warn("Endpoint not defined in API method for config: {}", configName);
             throw new RuntimeException("Endpoint not defined in API method for config: " + configName);
         }
+
+        // 5. Récupération des mappings de champs
         List<FieldMapping> fieldMappings = apiMethod.getFieldMappings();
 
         if (fieldMappings == null || fieldMappings.isEmpty()) {
+            logger.warn("No FieldMappings defined for API method: {}", apiMethod.getId());
             throw new RuntimeException("No FieldMappings defined for this API method.");
         }
-        String mappingType = fieldMappings.get(0).getType();
-        System.out.println("Mapping type for API Method: " + mappingType);
+
+        // 6. Récupération du type de mapping depuis APIMethod
+        String mappingType = apiMethod.getType();
+
+        if (mappingType == null || mappingType.isEmpty()) {
+            logger.warn("Mapping type is not defined for API method: {}", apiMethod.getId());
+            throw new RuntimeException("Mapping type is not defined for this API method.");
+        }
+
+        logger.info("Mapping type for API Method [{}]: {}", apiMethod.getId(), mappingType);
 
         if ("jsonPath".equalsIgnoreCase(mappingType)) {
             if (apiMethod.isPaginated()) {
@@ -336,28 +345,50 @@ public class ProductMappingService {
     private Product mapProductFromResponse(Map<String, Object> productData, APIMethod apiMethod) {
         Product product = new Product();
 
+        // On récupère les mappings associés à cet APIMethod
         List<FieldMapping> fieldMappings = fieldMappingRepository.findByApiMethod(apiMethod);
 
         if (fieldMappings == null || fieldMappings.isEmpty()) {
             logger.warn("Aucun mapping trouvé pour l'API Method : {}", apiMethod.getEndpoint());
-            return product;
+            return product; // Ou tu peux throw si c'est bloquant
+        }
+
+        // On récupère le type de mapping à partir de l'APIMethod
+        String mappingType = apiMethod.getType();
+
+        if (mappingType == null || mappingType.isEmpty()) {
+            logger.warn("Le type de mapping n'est pas défini pour l'API Method : {}", apiMethod.getId());
+            throw new RuntimeException("Le type de mapping n'est pas défini pour cette API Method.");
         }
 
         try {
-            for (FieldMapping fieldMapping : fieldMappings) {
-                if ("jsonPath".equals(fieldMapping.getType())) {
-                    new JsonPathMappingStrategy().mapFields(product, productData, fieldMapping);
-                } else if ("reflection".equals(fieldMapping.getType()))  {
-                    new ReflectionMappingStrategy().mapFields(product, productData, fieldMapping);
-                }
+            switch (mappingType.toLowerCase()) {
+                case "jsonpath":
+                    JsonPathMappingStrategy jsonPathStrategy = new JsonPathMappingStrategy();
+                    for (FieldMapping fieldMapping : fieldMappings) {
+                        jsonPathStrategy.mapFields(product, productData, fieldMapping);
+                    }
+                    break;
+
+                case "reflection":
+                    ReflectionMappingStrategy reflectionStrategy = new ReflectionMappingStrategy();
+                    for (FieldMapping fieldMapping : fieldMappings) {
+                        reflectionStrategy.mapFields(product, productData, fieldMapping);
+                    }
+                    break;
+
+                default:
+                    logger.error("Type de mapping inconnu : {}", mappingType);
+                    throw new RuntimeException("Type de mapping inconnu : " + mappingType);
             }
         } catch (Exception e) {
-            logger.error("Erreur lors du mapping du produit : {}", e.getMessage(), e);
+            logger.error("Erreur lors du mapping du produit pour l'API Method [{}]: {}", apiMethod.getId(), e.getMessage(), e);
             throw new RuntimeException("Erreur lors du mapping du produit", e);
         }
 
         return product;
     }
+
     public List<Product> importAllProductsFromAllTiers() {
         logger.info("Début de l'importation de tous les produits de tous les tiers");
 

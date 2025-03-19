@@ -22,7 +22,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().hasAnyAuthority("ADMIN", "EMPLOYEE")
+
+
+                                .requestMatchers("/config/admin/**").hasAuthority("ADMIN")
+
+                                .anyRequest().hasAnyAuthority("ADMIN", "EMPLOYEE")
                 )
                 .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
 

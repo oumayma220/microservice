@@ -20,6 +20,7 @@ public class TiersRequest {
    // private Integer pageSize;
     private String totalPagesFieldInResponse;
     private String contentFieldInResponse;
+    private String type;
 
     private List<FieldMappingDTO> fieldMappings;
 }

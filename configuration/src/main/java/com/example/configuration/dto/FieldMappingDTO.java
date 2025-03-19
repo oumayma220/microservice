@@ -6,5 +6,5 @@ import lombok.Data;
 public class FieldMappingDTO {
     private String source;
     private String target;
-    private String type;
+    //private String type;
 }
