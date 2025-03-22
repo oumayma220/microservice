@@ -32,7 +32,7 @@ public class APIMethod {
     @ManyToOne
     @JsonBackReference
     private RestAPIConfiguration restAPIConfig;
-    @OneToMany(mappedBy = "apiMethod", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "apiMethod", cascade = CascadeType.ALL,orphanRemoval = true)
     @JsonManagedReference
     private  List<FieldMapping> fieldMappings;
     private boolean paginated;

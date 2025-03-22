@@ -10,6 +10,11 @@ import java.util.Optional;
 public interface TiersRepository extends JpaRepository<Tiers, Long> {
     Optional<Tiers> findByNom(String nom);
     List<Tiers> findByTenantid(Integer tenantid);
+    Optional<Tiers> findByEmail(String email);
+    Optional<Tiers> findByNumero(String numero);
+    boolean existsByEmail(String email);
+    boolean existsByNumero(String numero);
+
 
 }
 

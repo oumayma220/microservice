@@ -6,6 +6,7 @@ import com.example.configuration.dao.repository.FieldMappingRepository;
 import com.example.configuration.dao.repository.RestAPIConfigRepository;
 import com.example.configuration.dao.repository.TiersRepository;
 import com.example.configuration.dto.UserDTO;
+import com.example.configuration.request.TiersGeneralInfoRequest;
 import com.example.configuration.request.TiersRequest;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +35,7 @@ public class TiersConfigurationService {
     public Tiers createTiersWithConfig(TiersRequest request) {
         Integer currentTenantId  = getCurrentTenantId();
 
-        Tiers tiers = getOrCreateTiers(request.getNom(),currentTenantId );
+        Tiers tiers = getOrCreateTiers(request.getNom(),request.getEmail(),request.getNumero(),currentTenantId );
 
         RestAPIConfiguration apiConfig = getOrCreateRestAPIConfig(
                 tiers,
@@ -65,11 +66,14 @@ public class TiersConfigurationService {
         return tiers;
     }
 
-    private Tiers getOrCreateTiers(String name ,Integer tenantid) {
+    private Tiers getOrCreateTiers(String name,  String email, String numero ,Integer tenantid) {
         return tiersRepository.findByNom(name).orElseGet(() -> {
             Tiers tiers = new Tiers();
             tiers.setNom(name);
+            tiers.setEmail(email);
+            tiers.setNumero(numero);
             tiers.setTenantid(tenantid);
+
 
             return tiersRepository.save(tiers);
         });
@@ -125,7 +129,6 @@ public class TiersConfigurationService {
             fieldMapping.setApiMethod(apiMethod);
             fieldMapping.setSource(source);
             fieldMapping.setTarget(target);
-           // fieldMapping.setType(type);
             fieldMapping.setTenantid(tenantid);
             fieldMappingRepository.save(fieldMapping);
         }
@@ -134,6 +137,9 @@ public class TiersConfigurationService {
     public Tiers updateTiersWithConfig(String tiersName, String configName, TiersRequest request) {
         Tiers tiers = tiersRepository.findByNom(tiersName)
                 .orElseThrow(() -> new RuntimeException("Tiers not found with name: " + tiersName));
+        tiers.setEmail(request.getEmail());
+        tiers.setNumero(request.getNumero());
+
         RestAPIConfiguration apiConfig = restAPIConfigRepository.findByTiersAndConfigName(tiers, configName)
                 .orElseThrow(() -> new RuntimeException("API Configuration not found for: " + configName));
         apiConfig.setUrl(request.getUrl());
@@ -183,6 +189,22 @@ public class TiersConfigurationService {
 
         return tiers;
     }
+    @Transactional
+    public Tiers updateTiersGeneralInfo(Long id, TiersGeneralInfoRequest request) {
+        Tiers tiers = tiersRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tiers not found with id: " + id));
+        if (tiersRepository.existsByEmail(request.getEmail()) && !tiers.getEmail().equals(request.getEmail())) {
+            throw new IllegalArgumentException("Email déjà utilisé");
+        }
+        if (tiersRepository.existsByNumero(request.getNumero()) && !tiers.getNumero().equals(request.getNumero())) {
+            throw new IllegalArgumentException("Numéro déjà utilisé");
+        }
+        tiers.setEmail(request.getEmail());
+        tiers.setNumero(request.getNumero());
+        tiers.setNom(request.getNom());
+        return tiersRepository.save(tiers);
+    }
+
     public List<Tiers> getAllTiers() {
 
         Integer currentTenantId = getCurrentTenantId();
@@ -223,6 +245,15 @@ public class TiersConfigurationService {
         }
         throw new RuntimeException("User not authenticated or tenant information missing");
     }
+    @Transactional
+    public void deleteTiers(Long tiersId) {
+        Tiers tiers = tiersRepository.findById(tiersId)
+                .orElseThrow(() -> new RuntimeException("Tiers non trouvé avec l'ID: " + tiersId));
+        System.out.println("APIConfigurations à supprimer : " + tiers.getApiConfigurations());
+        tiersRepository.delete(tiers);
+
+    }
+
 
 
 

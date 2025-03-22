@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
 public class TiersDTO {
     private Long id;
     private String nom;
+    private String email;
+    private String numero;
     private List<String> configNames;
     private Integer tenantid;
 
@@ -21,6 +23,8 @@ public class TiersDTO {
     public TiersDTO(Tiers tiers) {
         this.id = tiers.getId();
         this.nom = tiers.getNom();
+        this.email=tiers.getEmail();
+        this.numero= tiers.getNumero();
         this.tenantid = tiers.getTenantid();
 
         // Filtrer les configurations nulles avant de les mapper

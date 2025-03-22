@@ -21,7 +21,7 @@ public class RestAPIConfiguration extends APIConfiguration {
     private String url;
 
     private String headers;
-    @OneToMany(mappedBy = "restAPIConfig", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "restAPIConfig", cascade = CascadeType.ALL,orphanRemoval = true)
     @JsonManagedReference
     private List<APIMethod> apiMethods;
 

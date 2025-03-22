@@ -4,12 +4,8 @@ import com.example.configuration.dto.FieldMappingDTO;
 import lombok.Data;
 
 import java.util.List;
-
 @Data
-public class TiersRequest {
-    private String nom;
-    private String email;
-    private String numero;
+public class TiersConfigRequest {
     private String configName;
     private String url;
     private String headers;
@@ -19,10 +15,8 @@ public class TiersRequest {
     private boolean paginated;
     private String paginationParamName;
     private String pageSizeParamName;
-   // private Integer pageSize;
     private String totalPagesFieldInResponse;
     private String contentFieldInResponse;
     private String type;
-
     private List<FieldMappingDTO> fieldMappings;
 }

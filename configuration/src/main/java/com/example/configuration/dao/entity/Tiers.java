@@ -20,7 +20,9 @@ public class Tiers {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String nom;
-    @OneToMany(mappedBy = "tiers", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private String email;
+    private String numero;
+    @OneToMany(mappedBy = "tiers", cascade = CascadeType.ALL,orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<APIConfiguration> apiConfigurations;
     private Integer tenantid;
