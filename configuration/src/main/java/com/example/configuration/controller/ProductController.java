@@ -3,6 +3,7 @@ package com.example.configuration.controller;
 import com.example.configuration.dao.entity.Product;
 import com.example.configuration.dao.entity.RestAPIConfiguration;
 import com.example.configuration.dao.entity.Tiers;
+import com.example.configuration.dto.TiersDTO;
 import com.example.configuration.service.ProductMappingService;
 import com.example.configuration.service.TiersConfigurationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,17 +49,18 @@ public class ProductController {
         List<Tiers> tiersList = tiersConfigurationService.getAllTiers();
         return ResponseEntity.ok(tiersList);
     }
-    @GetMapping("tiers/{tiersId}/configs")
-    public ResponseEntity<List<RestAPIConfiguration>> getConfigsByTiersId(@PathVariable Long tiersId) {
-        List<RestAPIConfiguration> configs = tiersConfigurationService.getConfigurationsByTiersId(tiersId);
-        return ResponseEntity.ok(configs);
+    @GetMapping("tiers/{id}")
+    public ResponseEntity<TiersDTO> getTiersById(@PathVariable("id") Long id) {
+        TiersDTO tiersDTO = tiersConfigurationService.getTiersById(id);
+        return ResponseEntity.ok(tiersDTO);
     }
 
-    @GetMapping("/configs")
-    public ResponseEntity<List<RestAPIConfiguration>> getConfigsByTiersNom(@RequestParam String nomTiers) {
-        List<RestAPIConfiguration> configs = tiersConfigurationService.getConfigurationsByTiersNom(nomTiers);
-        return ResponseEntity.ok(configs);
-    }
+
+   // @GetMapping("/configs")
+   // public ResponseEntity<List<RestAPIConfiguration>> getConfigsByTiersNom(@RequestParam String nomTiers) {
+    //    List<RestAPIConfiguration> configs = tiersConfigurationService.getConfigurationsByTiersNom(nomTiers);
+    //    return ResponseEntity.ok(configs);
+  //  }
     @GetMapping("/current")
     public ResponseEntity<?> getCurrentTenantId() {
         try {

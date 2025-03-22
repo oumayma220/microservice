@@ -14,6 +14,8 @@ public interface TiersRepository extends JpaRepository<Tiers, Long> {
     Optional<Tiers> findByNumero(String numero);
     boolean existsByEmail(String email);
     boolean existsByNumero(String numero);
+    Optional<Tiers> findByIdAndTenantid(Long id, Integer tenantid);
+
 
 
 }

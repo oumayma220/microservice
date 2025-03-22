@@ -5,6 +5,7 @@ import com.example.configuration.dao.repository.APIMethodRepository;
 import com.example.configuration.dao.repository.FieldMappingRepository;
 import com.example.configuration.dao.repository.RestAPIConfigRepository;
 import com.example.configuration.dao.repository.TiersRepository;
+import com.example.configuration.dto.TiersDTO;
 import com.example.configuration.dto.UserDTO;
 import com.example.configuration.request.TiersGeneralInfoRequest;
 import com.example.configuration.request.TiersRequest;
@@ -214,10 +215,7 @@ public class TiersConfigurationService {
         Integer currentTenantId = getCurrentTenantId();
         return restAPIConfigRepository.findByTiers_IdAndTenantid(tiersId, currentTenantId);
     }
-    public List<RestAPIConfiguration> getConfigurationsByTiersNom(String nomTiers) {
-        Integer currentTenantId = getCurrentTenantId();
-        return restAPIConfigRepository.findByTiers_NomAndTenantid(nomTiers, currentTenantId);
-    }
+
     @Transactional
     public void deleteConfigurationById(Long configId) {
         RestAPIConfiguration config = restAPIConfigRepository.findById(configId)
@@ -251,10 +249,22 @@ public class TiersConfigurationService {
                 .orElseThrow(() -> new RuntimeException("Tiers non trouvé avec l'ID: " + tiersId));
         System.out.println("APIConfigurations à supprimer : " + tiers.getApiConfigurations());
         tiersRepository.delete(tiers);
-
     }
+    public TiersDTO getTiersById(Long tiersId) {
+        Integer currentTenantId = getCurrentTenantId();
 
+        Tiers tiers = tiersRepository.findByIdAndTenantid(tiersId, currentTenantId)
+                .orElseThrow(() -> new RuntimeException("Tiers non trouvé avec l'ID: " + tiersId + " pour ce locataire"));
 
+        // Initialisation du DTO
+        TiersDTO dto = new TiersDTO(tiers);
+
+        dto.setNom(tiers.getNom());
+        dto.setEmail(tiers.getEmail());
+        dto.setNumero(tiers.getNumero());
+
+        return dto;
+    }
 
 
 }

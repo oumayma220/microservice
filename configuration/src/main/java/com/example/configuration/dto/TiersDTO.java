@@ -18,16 +18,12 @@ public class TiersDTO {
     private String numero;
     private List<String> configNames;
     private Integer tenantid;
-
-
     public TiersDTO(Tiers tiers) {
         this.id = tiers.getId();
         this.nom = tiers.getNom();
         this.email=tiers.getEmail();
         this.numero= tiers.getNumero();
         this.tenantid = tiers.getTenantid();
-
-        // Filtrer les configurations nulles avant de les mapper
         this.configNames = tiers.getApiConfigurations().stream()
                 .filter(config -> config != null && config.getConfigName() != null)
                 .map(APIConfiguration::getConfigName)

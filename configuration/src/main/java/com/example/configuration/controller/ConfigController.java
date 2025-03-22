@@ -1,5 +1,6 @@
 package com.example.configuration.controller;
 
+import com.example.configuration.dao.entity.RestAPIConfiguration;
 import com.example.configuration.dao.entity.Tiers;
 import com.example.configuration.request.TiersGeneralInfoRequest;
 import com.example.configuration.request.TiersRequest;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @CrossOrigin(origins = "http://localhost:4200")
@@ -34,6 +36,11 @@ public class ConfigController {
             return ResponseEntity.badRequest().build();
         }
     }
+    @GetMapping("tiers/configs/{tiersId}")
+    public ResponseEntity<List<RestAPIConfiguration>> getConfigsByTiersId(@PathVariable Long tiersId) {
+        List<RestAPIConfiguration> configs = tiersConfigurationService.getConfigurationsByTiersId(tiersId);
+        return ResponseEntity.ok(configs);
+    }
     @PutMapping("/{id}/general-info")
     public ResponseEntity<String> updateTiersGeneralInfo(
             @PathVariable Long id,
@@ -41,20 +48,16 @@ public class ConfigController {
     ) {
         try {
             Tiers updatedTiers = tiersConfigurationService.updateTiersGeneralInfo(id, request);
-
-            // Message de succès
             String responseMessage = "Tiers mis à jour avec succès";
-            return ResponseEntity.ok(responseMessage);  // Retourne le message en texte
+            return ResponseEntity.ok(responseMessage);
         } catch (IllegalArgumentException e) {
-            // Message d'erreur pour email ou numéro déjà utilisés
             String errorMessage = e.getMessage();
-            return ResponseEntity.badRequest().body(errorMessage);  // Retourne l'erreur en texte
+            return ResponseEntity.badRequest().body(errorMessage);
         } catch (RuntimeException e) {
             // Tiers non trouvé
             String errorMessage = "Tiers non trouvé";
-            return ResponseEntity.notFound().build();  // Pas de corps, mais un code 404
+            return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            // Erreur interne du serveur
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur interne du serveur");
         }
     }
