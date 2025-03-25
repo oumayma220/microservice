@@ -19,7 +19,6 @@ public class TiersRequest {
     private boolean paginated;
     private String paginationParamName;
     private String pageSizeParamName;
-   // private Integer pageSize;
     private String totalPagesFieldInResponse;
     private String contentFieldInResponse;
     private String type;

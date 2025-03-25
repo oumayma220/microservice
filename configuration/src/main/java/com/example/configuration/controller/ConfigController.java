@@ -2,6 +2,7 @@ package com.example.configuration.controller;
 
 import com.example.configuration.dao.entity.RestAPIConfiguration;
 import com.example.configuration.dao.entity.Tiers;
+import com.example.configuration.dto.FieldMappingDTO;
 import com.example.configuration.request.TiersGeneralInfoRequest;
 import com.example.configuration.request.TiersRequest;
 import com.example.configuration.service.ProductMappingService;
@@ -10,14 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 @CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping("/config/admin")
-
 @RestController
 public class ConfigController {
     @Autowired
@@ -28,10 +26,7 @@ public class ConfigController {
     public ResponseEntity<String> createTiersWithConfig(@RequestBody TiersRequest request) {
         try {
             Tiers createdTiers = tiersConfigurationService.createTiersWithConfig(request);
-           // TiersDTO response = new TiersDTO(createdTiers);
-           // return ResponseEntity.ok(response);
             return ResponseEntity.ok("Tiers créé avec succès !");
-
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
@@ -54,14 +49,44 @@ public class ConfigController {
             String errorMessage = e.getMessage();
             return ResponseEntity.badRequest().body(errorMessage);
         } catch (RuntimeException e) {
-            // Tiers non trouvé
             String errorMessage = "Tiers non trouvé";
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur interne du serveur");
         }
     }
+    @PostMapping("/{tiersId}/configs")
+    public ResponseEntity<?> addConfigToTiers(@PathVariable Long tiersId, @RequestBody TiersRequest request) {
+        try {
+            RestAPIConfiguration newConfig = tiersConfigurationService.addConfigToTiersById(tiersId, request);
+        return ResponseEntity.ok("config  créé avec succès ");
+    }catch (Exception e) {
+        return ResponseEntity.badRequest().build();
+    }
+    }
+    @PostMapping("/addApiMethodAndFieldMappings/{configId}")
+    public ResponseEntity<?> addApiMethodAndFieldMappingsToConfig(
+            @PathVariable Long configId,
+            @RequestBody TiersRequest request) {
+        try {
+            RestAPIConfiguration updatedConfig = tiersConfigurationService.addApiMethodAndFieldMappingsToConfig(configId, request);
+            return ResponseEntity.ok(" apimethod créé avec succès ");
+        }catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    @PostMapping("/add/{apiMethodId}")
+    public ResponseEntity<String> addFieldMappingsByApiMethodId(
+            @PathVariable Long apiMethodId,
+            @RequestBody List<FieldMappingDTO> fieldMappingsRequest) {
 
+        try {
+            tiersConfigurationService.addFieldMappingsByApiMethodId(apiMethodId, fieldMappingsRequest);
+            return ResponseEntity.ok("Field mappings added successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body("Error: " + e.getMessage());
+        }
+    }
 
     @PutMapping("/api/tiers/{tiersName}/config/{configName}")
     public ResponseEntity<Tiers> updateTiersWithConfig(
@@ -76,18 +101,6 @@ public class ConfigController {
         }
     }
 
-    @DeleteMapping("/tiers/{tiersId}/configs/{configId}")
-    public ResponseEntity<String> deleteConfiguration(
-            @PathVariable Long tiersId,
-            @PathVariable Long configId
-    ) {
-        try {
-            tiersConfigurationService.deleteConfigurationByTiers(tiersId, configId);
-            return ResponseEntity.ok("Configuration supprimée avec succès !");
-        } catch (RuntimeException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        }
-    }
     @DeleteMapping("/{tiersId}/delete")
     public ResponseEntity<String> deleteTiers(@PathVariable Long tiersId) {
         try {
@@ -97,9 +110,41 @@ public class ConfigController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la suppression : " + e.getMessage());
         }
     }
+    @DeleteMapping("/delete/config/{configId}")
+    public ResponseEntity<String> deleteconfig(@PathVariable Long configId) {
+        try {
+            tiersConfigurationService.deleteConfig(configId);
+            return ResponseEntity.ok("configurations a été supprimés avec succès !");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la suppression : " + e.getMessage());
+        }
+    }
+    @DeleteMapping("/delete/method/{MethodId}")
+    public ResponseEntity<String> method(@PathVariable Long MethodId) {
+        try {
+            tiersConfigurationService.deleteApiMethod(MethodId);
+            return ResponseEntity.ok("ApiMethod a été supprimés avec succès !");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la suppression : " + e.getMessage());
+        }
+    }
+    @DeleteMapping("/delete/field/{FieldId}")
+    public ResponseEntity<String> deletefieldmapping (@PathVariable Long FieldId) {
+        try {
+            tiersConfigurationService.deleteApiMethod(FieldId);
+            return ResponseEntity.ok("fieldmapping a été supprimés avec succès !");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la suppression : " + e.getMessage());
+        }
+    }
+
+
+    }
 
 
 
-}
+
+
+
 
 

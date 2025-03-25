@@ -15,7 +15,7 @@ public interface RestAPIConfigRepository  extends JpaRepository<RestAPIConfigura
     List<RestAPIConfiguration> findByTiers_Id(Long tiersId);
     List<RestAPIConfiguration> findByTiers_Nom(String nomTiers);
     Optional<RestAPIConfiguration> findById(Long id);
-    Optional<RestAPIConfiguration> findByIdAndTiers_Id(Long configId, Long tiersId);
+    Optional<RestAPIConfiguration> findByIdAndTiers_Id(Long configId, Integer tiersId);
     List<RestAPIConfiguration> findByTiers_IdAndTenantid(Long tiersId, Integer tenantid);
 
     List<RestAPIConfiguration> findByTiers_NomAndTenantid(String nomTiers, Integer tenantid);
@@ -23,4 +23,7 @@ public interface RestAPIConfigRepository  extends JpaRepository<RestAPIConfigura
     Optional<RestAPIConfiguration> findByIdAndTiers_IdAndTenantid(Long configId, Long tiersId, Integer tenantid);
 
 
+    boolean existsByTiersAndConfigName(Tiers tiers, String configName);
+
 }
+

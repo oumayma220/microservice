@@ -3,6 +3,7 @@ package com.example.configuration.dao.entity;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,7 +22,7 @@ public class RestAPIConfiguration extends APIConfiguration {
     private String url;
 
     private String headers;
-    @OneToMany(mappedBy = "restAPIConfig", cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToMany(mappedBy = "restAPIConfig", cascade = CascadeType.ALL,orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<APIMethod> apiMethods;
 

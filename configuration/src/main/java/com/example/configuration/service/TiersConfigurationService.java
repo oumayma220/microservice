@@ -1,14 +1,13 @@
 package com.example.configuration.service;
 
 import com.example.configuration.dao.entity.*;
-import com.example.configuration.dao.repository.APIMethodRepository;
-import com.example.configuration.dao.repository.FieldMappingRepository;
-import com.example.configuration.dao.repository.RestAPIConfigRepository;
-import com.example.configuration.dao.repository.TiersRepository;
+import com.example.configuration.dao.repository.*;
+import com.example.configuration.dto.FieldMappingDTO;
 import com.example.configuration.dto.TiersDTO;
 import com.example.configuration.dto.UserDTO;
 import com.example.configuration.request.TiersGeneralInfoRequest;
 import com.example.configuration.request.TiersRequest;
+import com.jayway.jsonpath.JsonPath;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -31,6 +30,10 @@ public class TiersConfigurationService {
 
     @Autowired
     private FieldMappingRepository fieldMappingRepository;
+    @Autowired
+    private APIConfigurationRepository ApiConfigurationRepository;
+    @Autowired
+    private FieldMappingRepository FieldmappingRepository;
 
     @Transactional
     public Tiers createTiersWithConfig(TiersRequest request) {
@@ -147,11 +150,9 @@ public class TiersConfigurationService {
         apiConfig.setHeaders(request.getHeaders());
         restAPIConfigRepository.save(apiConfig);
 
-        // 4. Recherche de la méthode API liée à cette configuration
         APIMethod apiMethod = apiMethodRepository.findByRestAPIConfig(apiConfig)
                 .orElseThrow(() -> new RuntimeException("API Method not found for config: " + configName));
 
-        // 5. Mise à jour des détails de l'API method
         apiMethod.setHttpMethod(request.getHttpMethod());
         apiMethod.setEndpoint(request.getEndpoint());
         apiMethod.setHeaders(request.getMethodHeaders());
@@ -160,7 +161,7 @@ public class TiersConfigurationService {
         if (request.isPaginated()) {
             apiMethod.setPaginationParamName(request.getPaginationParamName());
             apiMethod.setPageSizeParamName(request.getPageSizeParamName());
-            apiMethod.setPageSize(10); // Tu peux rendre ça dynamique si besoin
+            apiMethod.setPageSize(10);
             apiMethod.setTotalPagesFieldInResponse(request.getTotalPagesFieldInResponse());
         } else {
             apiMethod.setPaginationParamName(null);
@@ -216,25 +217,6 @@ public class TiersConfigurationService {
         return restAPIConfigRepository.findByTiers_IdAndTenantid(tiersId, currentTenantId);
     }
 
-    @Transactional
-    public void deleteConfigurationById(Long configId) {
-        RestAPIConfiguration config = restAPIConfigRepository.findById(configId)
-                .orElseThrow(() -> new RuntimeException("Configuration not found"));
-
-        Optional<APIMethod> apiMethodOpt = apiMethodRepository.findByRestAPIConfig(config);
-        apiMethodOpt.ifPresent(apiMethodRepository::delete);
-        restAPIConfigRepository.delete(config);
-    }
-    @Transactional
-    public void deleteConfigurationByTiers(Long tiersId, Long configId) {
-        RestAPIConfiguration config = restAPIConfigRepository.findByIdAndTiers_Id(configId, tiersId)
-                .orElseThrow(() -> new RuntimeException("Configuration not found for the specified Tiers"));
-
-        Optional<APIMethod> apiMethodOpt = apiMethodRepository.findByRestAPIConfig(config);
-        apiMethodOpt.ifPresent(apiMethodRepository::delete);
-
-        restAPIConfigRepository.delete(config);
-    }
     public Integer getCurrentTenantId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof UserDTO) {
@@ -250,13 +232,37 @@ public class TiersConfigurationService {
         System.out.println("APIConfigurations à supprimer : " + tiers.getApiConfigurations());
         tiersRepository.delete(tiers);
     }
+    @Transactional
+    public void deleteConfig(Long configId) {
+        APIConfiguration config = ApiConfigurationRepository.findById(configId)
+                .orElseThrow(() -> new RuntimeException("Configuration non trouvée avec l'ID: " + configId));
+
+        System.out.println("Suppression de la configuration avec l'ID: " + configId);
+        ApiConfigurationRepository.delete(config);
+    }
+    @Transactional
+    public void deleteApiMethod(Long MethodId) {
+        APIMethod method = apiMethodRepository.findById(MethodId)
+                .orElseThrow(() -> new RuntimeException("apimethod non trouvée avec l'ID: " + MethodId));
+
+        System.out.println("Suppression de la apimethod avec l'ID: " + MethodId);
+        apiMethodRepository.delete(method);
+    }
+    @Transactional
+    public void deleteFieldMapiing(Long FieldId) {
+        FieldMapping fieldMapping = FieldmappingRepository.findById(FieldId)
+                .orElseThrow(() -> new RuntimeException("fieldmapping non trouvée avec l'ID: " + FieldId));
+
+        System.out.println("Suppression de field mapping avec l'ID: " + FieldId);
+        FieldmappingRepository.delete(fieldMapping);
+    }
+
     public TiersDTO getTiersById(Long tiersId) {
         Integer currentTenantId = getCurrentTenantId();
 
         Tiers tiers = tiersRepository.findByIdAndTenantid(tiersId, currentTenantId)
                 .orElseThrow(() -> new RuntimeException("Tiers non trouvé avec l'ID: " + tiersId + " pour ce locataire"));
 
-        // Initialisation du DTO
         TiersDTO dto = new TiersDTO(tiers);
 
         dto.setNom(tiers.getNom());
@@ -265,6 +271,124 @@ public class TiersConfigurationService {
 
         return dto;
     }
+    @Transactional
+    public RestAPIConfiguration addConfigToTiersById(Long tiersId, TiersRequest request) {
+
+        Integer currentTenantId = getCurrentTenantId();
+
+        Tiers tiers = tiersRepository.findByIdAndTenantid(tiersId, currentTenantId)
+                .orElseThrow(() -> new RuntimeException("Tiers non trouvé avec l'ID: " + tiersId));
+
+        if (restAPIConfigRepository.existsByTiersAndConfigName(tiers, request.getConfigName())) {
+            throw new IllegalArgumentException("Une configuration avec ce nom existe déjà pour ce tiers.");
+        }
+        RestAPIConfiguration apiConfig = new RestAPIConfiguration();
+        apiConfig.setConfigName(request.getConfigName());
+        apiConfig.setUrl(request.getUrl());
+        apiConfig.setHeaders(request.getHeaders());
+        apiConfig.setTenantid(currentTenantId);
+        apiConfig.setTiers(tiers);
+        restAPIConfigRepository.save(apiConfig);
+        APIMethod apiMethod = new APIMethod();
+        apiMethod.setRestAPIConfig(apiConfig);
+        apiMethod.setHttpMethod(request.getHttpMethod());
+        apiMethod.setEndpoint(request.getEndpoint());
+        apiMethod.setHeaders(request.getMethodHeaders());
+        apiMethod.setPaginated(request.isPaginated());
+        apiMethod.setContentFieldInResponse(request.getContentFieldInResponse());
+        apiMethod.setType(request.getType());
+        apiMethod.setTenantid(currentTenantId);
+
+        if (request.isPaginated()) {
+            apiMethod.setPaginationParamName(request.getPaginationParamName());
+            apiMethod.setPageSizeParamName(request.getPageSizeParamName());
+            apiMethod.setPageSize(10);
+            apiMethod.setTotalPagesFieldInResponse(request.getTotalPagesFieldInResponse());
+        }
+
+        apiMethodRepository.save(apiMethod);
+
+        request.getFieldMappings().forEach(mapping -> {
+            FieldMapping fieldMapping = new FieldMapping();
+            fieldMapping.setApiMethod(apiMethod);
+            fieldMapping.setSource(mapping.getSource());
+            fieldMapping.setTarget(mapping.getTarget());
+            fieldMapping.setTenantid(currentTenantId);
+
+            fieldMappingRepository.save(fieldMapping);
+        });
+
+        return apiConfig;
+    }
+    @Transactional
+    public RestAPIConfiguration addApiMethodAndFieldMappingsToConfig(Long configId, TiersRequest request) {
+
+        Integer currentTenantId = getCurrentTenantId();
+        RestAPIConfiguration apiConfig = restAPIConfigRepository.findById(configId)
+                .orElseThrow(() -> new RuntimeException("RestAPIConfiguration not found with id: " + configId));
+        if (!apiConfig.getTenantid().equals(currentTenantId)) {
+            throw new RuntimeException("Unauthorized access to this configuration");
+        }
+        APIMethod apiMethod = new APIMethod();
+        apiMethod.setRestAPIConfig(apiConfig);
+        apiMethod.setHttpMethod(request.getHttpMethod());
+        apiMethod.setEndpoint(request.getEndpoint());
+        apiMethod.setHeaders(request.getMethodHeaders());
+        apiMethod.setPaginated(request.isPaginated());
+        apiMethod.setContentFieldInResponse(request.getContentFieldInResponse());
+        apiMethod.setType(request.getType());
+        apiMethod.setTenantid(currentTenantId);
+        if (request.isPaginated()) {
+            apiMethod.setPaginationParamName(request.getPaginationParamName());
+            apiMethod.setPageSizeParamName(request.getPageSizeParamName());
+            apiMethod.setPageSize(10); // Valeur par défaut de pageSize
+            apiMethod.setTotalPagesFieldInResponse(request.getTotalPagesFieldInResponse());
+        }
+        apiMethodRepository.save(apiMethod);
+        System.out.println("APIMethod saved: " + apiMethod); // Log de confirmation
+        request.getFieldMappings().forEach(mapping -> {
+            FieldMapping fieldMapping = new FieldMapping();
+            fieldMapping.setApiMethod(apiMethod);
+            fieldMapping.setSource(mapping.getSource());
+            fieldMapping.setTarget(mapping.getTarget());
+            fieldMapping.setTenantid(currentTenantId);
+
+            try {
+                fieldMappingRepository.save(fieldMapping);
+                System.out.println("FieldMapping saved: " + fieldMapping); // Log de confirmation
+            } catch (Exception e) {
+                System.err.println("Error saving field mapping: " + e.getMessage());
+                throw new RuntimeException("Error saving field mapping", e);
+            }
+        });
+        return apiConfig;
+    }
+    @Transactional
+    public void addFieldMappingsByApiMethodId(Long apiMethodId, List<FieldMappingDTO> fieldMappingsRequest) {
+        Integer currentTenantId = getCurrentTenantId();
+
+        APIMethod apiMethod = apiMethodRepository.findById(apiMethodId)
+                .orElseThrow(() -> new RuntimeException("API Method not found with ID: " + apiMethodId));
+        if (!apiMethod.getTenantid().equals(currentTenantId)) {
+            throw new RuntimeException("Unauthorized access to this API method");
+        }
+        fieldMappingsRequest.forEach(mappingRequest -> {
+            Optional<FieldMapping> existingMapping = fieldMappingRepository.findByApiMethodAndSourceAndTarget(
+                    apiMethod, mappingRequest.getSource(), mappingRequest.getTarget());
+            if (existingMapping.isEmpty()) {
+                FieldMapping fieldMapping = new FieldMapping();
+                fieldMapping.setApiMethod(apiMethod);
+                fieldMapping.setSource(mappingRequest.getSource());
+                fieldMapping.setTarget(mappingRequest.getTarget());
+                fieldMapping.setTenantid(currentTenantId);
+                fieldMappingRepository.save(fieldMapping);
+            }
+        });
+    }
+
+
+
+
 
 
 }
