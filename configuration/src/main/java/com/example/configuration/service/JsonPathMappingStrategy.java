@@ -2,6 +2,7 @@ package com.example.configuration.service;
 
 import com.example.configuration.dao.entity.FieldMapping;
 import com.example.configuration.dao.entity.Product;
+import com.example.configuration.dto.FieldMappingDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import net.minidev.json.JSONArray;
@@ -54,5 +55,11 @@ import java.util.Map;
             } catch (Exception e) {
                 logger.error("Error mapping field {} using JsonPath {}: {}", target, source, e.getMessage(), e);
             }
+        }
+
+        @Override
+        public void mapFieldstest(Product product, Map<String, Object> data, FieldMappingDTO fieldMappingDTO) {
+            // If you need any special handling, you can override the default implementation
+            MappingStrategy.super.mapFieldstest(product, data, fieldMappingDTO);
         }
     }

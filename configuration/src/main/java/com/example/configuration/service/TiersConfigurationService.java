@@ -5,6 +5,8 @@ import com.example.configuration.dao.repository.*;
 import com.example.configuration.dto.FieldMappingDTO;
 import com.example.configuration.dto.TiersDTO;
 import com.example.configuration.dto.UserDTO;
+import com.example.configuration.request.ApiMethodGeneralInfoRequest;
+import com.example.configuration.request.ConfigGeneralInfoRequest;
 import com.example.configuration.request.TiersGeneralInfoRequest;
 import com.example.configuration.request.TiersRequest;
 import com.jayway.jsonpath.JsonPath;
@@ -137,60 +139,7 @@ public class TiersConfigurationService {
             fieldMappingRepository.save(fieldMapping);
         }
     }
-    @Transactional
-    public Tiers updateTiersWithConfig(String tiersName, String configName, TiersRequest request) {
-        Tiers tiers = tiersRepository.findByNom(tiersName)
-                .orElseThrow(() -> new RuntimeException("Tiers not found with name: " + tiersName));
-        tiers.setEmail(request.getEmail());
-        tiers.setNumero(request.getNumero());
 
-        RestAPIConfiguration apiConfig = restAPIConfigRepository.findByTiersAndConfigName(tiers, configName)
-                .orElseThrow(() -> new RuntimeException("API Configuration not found for: " + configName));
-        apiConfig.setUrl(request.getUrl());
-        apiConfig.setHeaders(request.getHeaders());
-        restAPIConfigRepository.save(apiConfig);
-
-        APIMethod apiMethod = apiMethodRepository.findByRestAPIConfig(apiConfig)
-                .orElseThrow(() -> new RuntimeException("API Method not found for config: " + configName));
-
-        apiMethod.setHttpMethod(request.getHttpMethod());
-        apiMethod.setEndpoint(request.getEndpoint());
-        apiMethod.setHeaders(request.getMethodHeaders());
-        apiMethod.setPaginated(request.isPaginated());
-        apiMethod.setContentFieldInResponse(request.getContentFieldInResponse());
-        if (request.isPaginated()) {
-            apiMethod.setPaginationParamName(request.getPaginationParamName());
-            apiMethod.setPageSizeParamName(request.getPageSizeParamName());
-            apiMethod.setPageSize(10);
-            apiMethod.setTotalPagesFieldInResponse(request.getTotalPagesFieldInResponse());
-        } else {
-            apiMethod.setPaginationParamName(null);
-            apiMethod.setPageSizeParamName(null);
-            apiMethod.setPageSize(null);
-            apiMethod.setTotalPagesFieldInResponse(null);
-        }
-        apiMethod.setType(request.getType());
-        apiMethodRepository.save(apiMethod);
-        List<FieldMapping> existingMappings = fieldMappingRepository.findByApiMethod(apiMethod);
-
-        if (!existingMappings.isEmpty()) {
-            fieldMappingRepository.deleteAll(existingMappings);
-        }
-
-        Integer currentTenantId = getCurrentTenantId();
-
-        request.getFieldMappings().forEach(mapping -> {
-            FieldMapping fieldMapping = new FieldMapping();
-            fieldMapping.setApiMethod(apiMethod);
-            fieldMapping.setSource(mapping.getSource());
-            fieldMapping.setTarget(mapping.getTarget());
-            fieldMapping.setTenantid(currentTenantId);
-
-            fieldMappingRepository.save(fieldMapping);
-        });
-
-        return tiers;
-    }
     @Transactional
     public Tiers updateTiersGeneralInfo(Long id, TiersGeneralInfoRequest request) {
         Tiers tiers = tiersRepository.findById(id)
@@ -206,9 +155,29 @@ public class TiersConfigurationService {
         tiers.setNom(request.getNom());
         return tiersRepository.save(tiers);
     }
-
+    public RestAPIConfiguration updateConfigGeneralInfo(Long id, ConfigGeneralInfoRequest request){
+        RestAPIConfiguration config = restAPIConfigRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("config not found with id: " + id));
+        config.setConfigName(request.getConfigName());
+        config.setUrl(request.getUrl());
+        config.setHeaders(request.getHeaders());
+        return restAPIConfigRepository.save(config);
+    }
+    public APIMethod updateApiMethod(Long id, ApiMethodGeneralInfoRequest request){
+        APIMethod method = apiMethodRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("method not found with id: " + id));
+        method.setHttpMethod(request.getHttpMethod());
+        method.setEndpoint(request.getEndpoint());
+        method.setHeaders(request.getMethodHeaders());
+        method.setPaginated(request.isPaginated());
+        method.setPaginationParamName(request.getPaginationParamName());
+        method.setPageSizeParamName(request.getPageSizeParamName());
+        method.setTotalPagesFieldInResponse(request.getTotalPagesFieldInResponse());
+        method.setContentFieldInResponse(request.getContentFieldInResponse());
+        method.setType(request.getType());
+        return apiMethodRepository.save(method);
+    }
     public List<Tiers> getAllTiers() {
-
         Integer currentTenantId = getCurrentTenantId();
         return tiersRepository.findByTenantid(currentTenantId);
     }
@@ -244,17 +213,17 @@ public class TiersConfigurationService {
     public void deleteApiMethod(Long MethodId) {
         APIMethod method = apiMethodRepository.findById(MethodId)
                 .orElseThrow(() -> new RuntimeException("apimethod non trouvée avec l'ID: " + MethodId));
-
         System.out.println("Suppression de la apimethod avec l'ID: " + MethodId);
         apiMethodRepository.delete(method);
     }
     @Transactional
-    public void deleteFieldMapiing(Long FieldId) {
-        FieldMapping fieldMapping = FieldmappingRepository.findById(FieldId)
-                .orElseThrow(() -> new RuntimeException("fieldmapping non trouvée avec l'ID: " + FieldId));
-
-        System.out.println("Suppression de field mapping avec l'ID: " + FieldId);
-        FieldmappingRepository.delete(fieldMapping);
+    public void deleteAllFieldMappingsByApiMethodId(Long MethodId) {
+        APIMethod apiMethod = apiMethodRepository.findById(MethodId)
+                .orElseThrow(() -> new RuntimeException("API Method not found with ID: " + MethodId));
+        List<FieldMapping> fieldMappings = fieldMappingRepository.findByApiMethod(apiMethod);
+        if (!fieldMappings.isEmpty()) {
+            fieldMappingRepository.deleteAll(fieldMappings);
+        }
     }
 
     public TiersDTO getTiersById(Long tiersId) {
@@ -262,7 +231,6 @@ public class TiersConfigurationService {
 
         Tiers tiers = tiersRepository.findByIdAndTenantid(tiersId, currentTenantId)
                 .orElseThrow(() -> new RuntimeException("Tiers non trouvé avec l'ID: " + tiersId + " pour ce locataire"));
-
         TiersDTO dto = new TiersDTO(tiers);
 
         dto.setNom(tiers.getNom());
@@ -385,6 +353,7 @@ public class TiersConfigurationService {
             }
         });
     }
+
 
 
 

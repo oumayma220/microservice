@@ -1,12 +1,10 @@
 package com.example.configuration.service;
 
-import com.example.configuration.dao.entity.APIMethod;
-import com.example.configuration.dao.entity.FieldMapping;
-import com.example.configuration.dao.entity.Product;
-import com.example.configuration.dao.entity.RestAPIConfiguration;
+import com.example.configuration.dao.entity.*;
 import com.example.configuration.dao.repository.APIMethodRepository;
 import com.example.configuration.dao.repository.FieldMappingRepository;
 import com.example.configuration.dao.repository.RestAPIConfigRepository;
+import com.example.configuration.dao.repository.TiersRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
@@ -19,6 +17,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductMappingService {
@@ -32,6 +31,8 @@ public class ProductMappingService {
 
     @Autowired
     private FieldMappingRepository fieldMappingRepository;
+    @Autowired
+    private TiersRepository tiersRepository;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -55,7 +56,6 @@ public class ProductMappingService {
             throw new RuntimeException("Endpoint not defined in API method for config: " + configName);
         }
 
-        // 5. Récupération des mappings de champs
         List<FieldMapping> fieldMappings = apiMethod.getFieldMappings();
 
         if (fieldMappings == null || fieldMappings.isEmpty()) {
@@ -63,7 +63,6 @@ public class ProductMappingService {
             throw new RuntimeException("No FieldMappings defined for this API method.");
         }
 
-        // 6. Récupération du type de mapping depuis APIMethod
         String mappingType = apiMethod.getType();
 
         if (mappingType == null || mappingType.isEmpty()) {
@@ -345,7 +344,6 @@ public class ProductMappingService {
     private Product mapProductFromResponse(Map<String, Object> productData, APIMethod apiMethod) {
         Product product = new Product();
 
-        // On récupère les mappings associés à cet APIMethod
         List<FieldMapping> fieldMappings = fieldMappingRepository.findByApiMethod(apiMethod);
 
         if (fieldMappings == null || fieldMappings.isEmpty()) {
@@ -353,7 +351,6 @@ public class ProductMappingService {
             return product; // Ou tu peux throw si c'est bloquant
         }
 
-        // On récupère le type de mapping à partir de l'APIMethod
         String mappingType = apiMethod.getType();
 
         if (mappingType == null || mappingType.isEmpty()) {
@@ -431,6 +428,59 @@ public class ProductMappingService {
 
         return allProducts;
     }
+
+    public List<Product> importProductsForTier(Long tierId) {
+        logger.info("Début de l'importation des produits pour le tier : {}", tierId);
+
+        Tiers tier = tiersRepository.findById(tierId)
+                .orElseThrow(() -> new RuntimeException("Tier not found with ID: " + tierId));
+
+        List<Product> allProducts = new ArrayList<>();
+
+        List<RestAPIConfiguration> configurations = restAPIConfigRepository.findByTiers_Id(tierId);
+
+        if (configurations == null || configurations.isEmpty()) {
+            logger.warn("Aucune configuration API trouvée pour le tier : {}", tierId);
+            return allProducts;
+        }
+
+        for (RestAPIConfiguration config : configurations) {
+            String configName = config.getConfigName();
+            logger.info("Traitement de la configuration : {}", configName);
+
+            List<APIMethod> getApiMethods = config.getApiMethods().stream()
+                    .filter(method -> "GET".equalsIgnoreCase(method.getHttpMethod()))
+                    .collect(Collectors.toList());
+
+            if (getApiMethods.isEmpty()) {
+                logger.warn("Aucune méthode GET trouvée pour la configuration : {}", configName);
+                continue;
+            }
+
+            for (APIMethod apiMethod : getApiMethods) {
+                String endpoint = apiMethod.getEndpoint();
+                logger.info("Traitement de l'endpoint GET : {} pour la configuration : {}", endpoint, configName);
+
+                try {
+                    List<Product> productsFromEndpoint = importProducts(configName, endpoint);
+                    logger.info("Nombre de produits récupérés depuis {} : {}", endpoint, productsFromEndpoint.size());
+                    allProducts.addAll(productsFromEndpoint);
+                } catch (Exception e) {
+                    logger.error("Erreur lors de l'importation des produits pour config '{}' et endpoint '{}': {}",
+                            configName, endpoint, e.getMessage(), e);
+                }
+            }
+        }
+
+        logger.info("Importation terminée pour le tier {}. Nombre total de produits récupérés : {}",
+                tierId, allProducts.size());
+
+        return allProducts;
+    }
+
+
+
+
 
 
 

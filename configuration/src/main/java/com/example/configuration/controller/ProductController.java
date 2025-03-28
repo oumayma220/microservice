@@ -1,10 +1,13 @@
 package com.example.configuration.controller;
 
 import com.example.configuration.dao.entity.Product;
-import com.example.configuration.dao.entity.RestAPIConfiguration;
 import com.example.configuration.dao.entity.Tiers;
+import com.example.configuration.dao.repository.TiersRepository;
 import com.example.configuration.dto.TiersDTO;
+import com.example.configuration.request.TiersRequest;
+import com.example.configuration.request.testrequest;
 import com.example.configuration.service.ProductMappingService;
+import com.example.configuration.service.TestService;
 import com.example.configuration.service.TiersConfigurationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,6 +26,10 @@ public class ProductController {
     private ProductMappingService service ;
     @Autowired
     private TiersConfigurationService tiersConfigurationService;
+    @Autowired
+    private TiersRepository tiersRepository;
+    @Autowired
+    private TestService testService;
 
     @GetMapping("/import-products")
     public ResponseEntity<List<Product>> importProducts(
@@ -71,4 +78,27 @@ public class ProductController {
                     .body(Map.of("error", e.getMessage()));
         }
     }
+    @GetMapping("/products/{tierId}")
+    public ResponseEntity<List<Product>> getProductsForTier(@PathVariable Long tierId) {
+        if (!tiersRepository.existsById(tierId)) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            List<Product> products = service.importProductsForTier(tierId);
+            if (products.isEmpty()) {
+                return ResponseEntity.noContent().build();
+            }
+            return ResponseEntity.ok(products);
+        } catch (Exception e) {
+            // Log the error
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    @PostMapping("/import")
+    public ResponseEntity<List<Product>> importProducts(@RequestBody TiersRequest request) {
+        List<Product> products = testService.importProducts(request);
+        return ResponseEntity.ok(products);
+    }
+
+
 }

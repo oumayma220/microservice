@@ -1,8 +1,11 @@
 package com.example.configuration.controller;
 
+import com.example.configuration.dao.entity.APIMethod;
 import com.example.configuration.dao.entity.RestAPIConfiguration;
 import com.example.configuration.dao.entity.Tiers;
 import com.example.configuration.dto.FieldMappingDTO;
+import com.example.configuration.request.ApiMethodGeneralInfoRequest;
+import com.example.configuration.request.ConfigGeneralInfoRequest;
 import com.example.configuration.request.TiersGeneralInfoRequest;
 import com.example.configuration.request.TiersRequest;
 import com.example.configuration.service.ProductMappingService;
@@ -55,6 +58,44 @@ public class ConfigController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur interne du serveur");
         }
     }
+    @PutMapping("/{id}/update-config")
+    public ResponseEntity<String> updateConfigGeneralInfo(
+            @PathVariable Long id,
+            @RequestBody ConfigGeneralInfoRequest request
+    ) {
+        try {
+            RestAPIConfiguration updatedConfig = tiersConfigurationService.updateConfigGeneralInfo(id, request);
+            String responseMessage = "Config mis à jour avec succès";
+            return ResponseEntity.ok(responseMessage);
+        } catch (IllegalArgumentException e) {
+            String errorMessage = e.getMessage();
+            return ResponseEntity.badRequest().body(errorMessage);
+        } catch (RuntimeException e) {
+            String errorMessage = "Config non trouvé";
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur interne du serveur");
+        }
+    }
+    @PutMapping("/{id}/update-method")
+    public ResponseEntity<String> updateapimethod(
+            @PathVariable Long id,
+            @RequestBody ApiMethodGeneralInfoRequest request
+    ) {
+        try {
+            APIMethod updatedMethod = tiersConfigurationService.updateApiMethod(id, request);
+            String responseMessage = "méthode mis à jour avec succès";
+            return ResponseEntity.ok(responseMessage);
+        } catch (IllegalArgumentException e) {
+            String errorMessage = e.getMessage();
+            return ResponseEntity.badRequest().body(errorMessage);
+        } catch (RuntimeException e) {
+            String errorMessage = "méthode non trouvé";
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur interne du serveur");
+        }
+    }
     @PostMapping("/{tiersId}/configs")
     public ResponseEntity<?> addConfigToTiers(@PathVariable Long tiersId, @RequestBody TiersRequest request) {
         try {
@@ -87,20 +128,6 @@ public class ConfigController {
             return ResponseEntity.status(400).body("Error: " + e.getMessage());
         }
     }
-
-    @PutMapping("/api/tiers/{tiersName}/config/{configName}")
-    public ResponseEntity<Tiers> updateTiersWithConfig(
-            @PathVariable String tiersName,
-            @PathVariable String configName,
-            @RequestBody TiersRequest request) {
-        try {
-            Tiers updatedTiers = tiersConfigurationService.updateTiersWithConfig(tiersName, configName, request);
-            return ResponseEntity.ok(updatedTiers);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(null);
-        }
-    }
-
     @DeleteMapping("/{tiersId}/delete")
     public ResponseEntity<String> deleteTiers(@PathVariable Long tiersId) {
         try {
@@ -128,15 +155,16 @@ public class ConfigController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la suppression : " + e.getMessage());
         }
     }
-    @DeleteMapping("/delete/field/{FieldId}")
-    public ResponseEntity<String> deletefieldmapping (@PathVariable Long FieldId) {
+    @DeleteMapping("/delete/field/{MethodId}")
+    public ResponseEntity<String> deletefieldmapping (@PathVariable Long MethodId) {
         try {
-            tiersConfigurationService.deleteApiMethod(FieldId);
+            tiersConfigurationService.deleteAllFieldMappingsByApiMethodId(MethodId);
             return ResponseEntity.ok("fieldmapping a été supprimés avec succès !");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la suppression : " + e.getMessage());
         }
     }
+
 
 
     }
