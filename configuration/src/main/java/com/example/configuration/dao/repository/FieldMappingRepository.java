@@ -11,6 +11,7 @@ import java.util.Optional;
 @Repository
 public interface FieldMappingRepository extends JpaRepository<FieldMapping, Long> {
     Optional<FieldMapping> findByApiMethodAndSourceAndTarget(APIMethod apiMethod, String source, String target);
+    void deleteByApiMethod_Id(Long apiMethodId);
 
     List<FieldMapping> findByApiMethod(APIMethod apiMethod);
 }

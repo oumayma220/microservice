@@ -1,6 +1,7 @@
 package com.example.configuration.controller;
 
 import com.example.configuration.dao.entity.APIMethod;
+import com.example.configuration.dao.entity.FieldMapping;
 import com.example.configuration.dao.entity.RestAPIConfiguration;
 import com.example.configuration.dao.entity.Tiers;
 import com.example.configuration.dto.FieldMappingDTO;
@@ -92,6 +93,25 @@ public class ConfigController {
         } catch (RuntimeException e) {
             String errorMessage = "méthode non trouvé";
             return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur interne du serveur");
+        }
+    }
+    @PutMapping("/{id}/update-mapping")
+    public ResponseEntity<String> updateMapping(
+            @PathVariable Long id,
+            @RequestBody List<FieldMappingDTO> request
+    ) {
+        try {
+            List<FieldMapping> updatedMappings = tiersConfigurationService.updateFieldMappings(id, request);
+            String responseMessage = "Mappings mis à jour avec succès";
+            return ResponseEntity.ok(responseMessage);
+        } catch (IllegalArgumentException e) {
+            String errorMessage = e.getMessage();
+            return ResponseEntity.badRequest().body(errorMessage);
+        } catch (RuntimeException e) {
+            String errorMessage = "Méthode API non trouvée";
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur interne du serveur");
         }

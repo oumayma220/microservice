@@ -35,24 +35,19 @@ public class AuthenticationFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-        // Si pas de token, on laisse passer (la sécurité s'en chargera)
         if(authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
         try {
-            // Valider le token
             boolean isValid = authServiceClient.validateToken(authHeader);
 
             if (isValid) {
-                // Récupérer les informations utilisateur
                 UserDTO userDTO = authServiceClient.getUserFromToken(authHeader);
 
-                // Créer les authorities
                 List<SimpleGrantedAuthority> authorities = userDTO.getRoles().stream()
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
-                // Créer l'authentication
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
                                 userDTO,
@@ -65,8 +60,7 @@ public class AuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         } catch (Exception e) {
-            // En cas d'erreur, on ne fait rien et on laisse passer
-            // Spring Security s'occupera de bloquer l'accès aux ressources protégées
+
         }
         filterChain.doFilter(request, response);
     }

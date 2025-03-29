@@ -16,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -176,6 +177,28 @@ public class TiersConfigurationService {
         method.setContentFieldInResponse(request.getContentFieldInResponse());
         method.setType(request.getType());
         return apiMethodRepository.save(method);
+    }
+    @Transactional
+    public List<FieldMapping> updateFieldMappings(Long apiMethodId, List<FieldMappingDTO> mappingRequests) {
+        APIMethod apiMethod = apiMethodRepository.findById(apiMethodId)
+                .orElseThrow(() -> new RuntimeException("APIMethod not found with id: " + apiMethodId));
+        Integer currentTenantId = getCurrentTenantId();
+        fieldMappingRepository.deleteByApiMethod_Id(apiMethodId);
+
+        // Créer les nouveaux mappings
+        List<FieldMapping> updatedMappings = new ArrayList<>();
+
+        for (FieldMappingDTO mapping : mappingRequests) {
+            FieldMapping fieldMapping = new FieldMapping();
+            fieldMapping.setApiMethod(apiMethod);
+            fieldMapping.setSource(mapping.getSource());
+            fieldMapping.setTarget(mapping.getTarget());
+            fieldMapping.setTenantid(currentTenantId);
+
+            updatedMappings.add(fieldMappingRepository.save(fieldMapping));
+        }
+
+        return updatedMappings;
     }
     public List<Tiers> getAllTiers() {
         Integer currentTenantId = getCurrentTenantId();
