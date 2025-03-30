@@ -387,29 +387,26 @@ public class ProductMappingService {
     }
 
     public List<Product> importAllProductsFromAllTiers() {
-        logger.info("Début de l'importation de tous les produits de tous les tiers");
-
         List<Product> allProducts = new ArrayList<>();
-
         List<RestAPIConfiguration> configurations = restAPIConfigRepository.findAll();
-
         if (configurations == null || configurations.isEmpty()) {
             logger.warn("Aucune configuration API trouvée.");
             return allProducts;
         }
-
         for (RestAPIConfiguration config : configurations) {
             String configName = config.getConfigName();
             logger.info("Traitement de la configuration : {}", configName);
-
             List<APIMethod> apiMethods = config.getApiMethods();
-
             if (apiMethods == null || apiMethods.isEmpty()) {
                 logger.warn("Aucune méthode API trouvée pour la configuration : {}", configName);
                 continue;
             }
-
             for (APIMethod apiMethod : apiMethods) {
+                if (!"GET".equalsIgnoreCase(apiMethod.getHttpMethod())) {
+                    logger.info("Méthode ignorée  : {} pour la configuration : {}", apiMethod.getHttpMethod(), configName);
+                    continue;
+                }
+
                 String endpoint = apiMethod.getEndpoint();
                 logger.info("Traitement de l'endpoint : {} pour la configuration : {}", endpoint, configName);
 
@@ -428,6 +425,7 @@ public class ProductMappingService {
 
         return allProducts;
     }
+
 
     public List<Product> importProductsForTier(Long tierId) {
         logger.info("Début de l'importation des produits pour le tier : {}", tierId);

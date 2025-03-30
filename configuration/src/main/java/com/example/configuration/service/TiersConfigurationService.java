@@ -1,5 +1,4 @@
 package com.example.configuration.service;
-
 import com.example.configuration.dao.entity.*;
 import com.example.configuration.dao.repository.*;
 import com.example.configuration.dto.FieldMappingDTO;
@@ -43,32 +42,37 @@ public class TiersConfigurationService {
         Integer currentTenantId  = getCurrentTenantId();
 
         Tiers tiers = getOrCreateTiers(request.getNom(),request.getEmail(),request.getNumero(),currentTenantId );
+        boolean hasConfigInfo = request.getConfigName() != null && !request.getConfigName().isEmpty() &&
+                request.getUrl() != null && !request.getUrl().isEmpty();
 
-        RestAPIConfiguration apiConfig = getOrCreateRestAPIConfig(
-                tiers,
-                request.getConfigName(),
-                request.getUrl(),
-                request.getHeaders(),
-                currentTenantId
-        );
+        if (hasConfigInfo) {
 
-        APIMethod apiMethod = getOrCreateAPIMethod(
-                apiConfig,
-                request.getHttpMethod(),
-                request.getEndpoint(),
-                request.getMethodHeaders(),
-                request.isPaginated(),
-                request.getPaginationParamName(),
-                request.getPageSizeParamName(),
-                request.getTotalPagesFieldInResponse(),
-                request.getContentFieldInResponse(),
-                request.getType(),
-                currentTenantId
-        );
+            RestAPIConfiguration apiConfig = getOrCreateRestAPIConfig(
+                    tiers,
+                    request.getConfigName(),
+                    request.getUrl(),
+                    request.getHeaders(),
+                    currentTenantId
+            );
 
-        request.getFieldMappings().forEach(mapping -> {
-            addFieldMapping(apiMethod, mapping.getSource(), mapping.getTarget(), currentTenantId);
-        });
+            APIMethod apiMethod = getOrCreateAPIMethod(
+                    apiConfig,
+                    request.getHttpMethod(),
+                    request.getEndpoint(),
+                    request.getMethodHeaders(),
+                    request.isPaginated(),
+                    request.getPaginationParamName(),
+                    request.getPageSizeParamName(),
+                    request.getTotalPagesFieldInResponse(),
+                    request.getContentFieldInResponse(),
+                    request.getType(),
+                    currentTenantId
+            );
+
+            request.getFieldMappings().forEach(mapping -> {
+                addFieldMapping(apiMethod, mapping.getSource(), mapping.getTarget(), currentTenantId);
+            });
+        }
 
         return tiers;
     }
@@ -80,8 +84,6 @@ public class TiersConfigurationService {
             tiers.setEmail(email);
             tiers.setNumero(numero);
             tiers.setTenantid(tenantid);
-
-
             return tiersRepository.save(tiers);
         });
     }
@@ -96,7 +98,6 @@ public class TiersConfigurationService {
             return restAPIConfigRepository.save(config);
         });
     }
-
     private APIMethod getOrCreateAPIMethod(
             RestAPIConfiguration restAPIConfig,
             String httpMethod,
@@ -140,7 +141,6 @@ public class TiersConfigurationService {
             fieldMappingRepository.save(fieldMapping);
         }
     }
-
     @Transactional
     public Tiers updateTiersGeneralInfo(Long id, TiersGeneralInfoRequest request) {
         Tiers tiers = tiersRepository.findById(id)
@@ -185,7 +185,6 @@ public class TiersConfigurationService {
         Integer currentTenantId = getCurrentTenantId();
         fieldMappingRepository.deleteByApiMethod_Id(apiMethodId);
 
-        // Créer les nouveaux mappings
         List<FieldMapping> updatedMappings = new ArrayList<>();
 
         for (FieldMappingDTO mapping : mappingRequests) {
