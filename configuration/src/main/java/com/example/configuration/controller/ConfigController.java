@@ -1,5 +1,4 @@
 package com.example.configuration.controller;
-
 import com.example.configuration.dao.entity.APIMethod;
 import com.example.configuration.dao.entity.FieldMapping;
 import com.example.configuration.dao.entity.RestAPIConfiguration;
@@ -15,9 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.NoSuchElementException;
+
 @CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping("/config/admin")
 @RestController
@@ -182,6 +181,15 @@ public class ConfigController {
             return ResponseEntity.ok("fieldmapping a été supprimés avec succès !");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la suppression : " + e.getMessage());
+        }
+    }
+    @GetMapping("config/{id}")
+    public ResponseEntity<?> getRestAPIConfigById(@PathVariable Long id) {
+        try {
+            RestAPIConfiguration config = tiersConfigurationService.getConfigById(id);
+            return ResponseEntity.ok(config);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Configuration non trouvée pour cet ID et tenant.");
         }
     }
 

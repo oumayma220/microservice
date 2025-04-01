@@ -432,16 +432,13 @@ public class ProductMappingService {
 
         Tiers tier = tiersRepository.findById(tierId)
                 .orElseThrow(() -> new RuntimeException("Tier not found with ID: " + tierId));
-
         List<Product> allProducts = new ArrayList<>();
-
         List<RestAPIConfiguration> configurations = restAPIConfigRepository.findByTiers_Id(tierId);
 
         if (configurations == null || configurations.isEmpty()) {
             logger.warn("Aucune configuration API trouvée pour le tier : {}", tierId);
             return allProducts;
         }
-
         for (RestAPIConfiguration config : configurations) {
             String configName = config.getConfigName();
             logger.info("Traitement de la configuration : {}", configName);

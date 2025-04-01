@@ -8,13 +8,11 @@ import com.example.configuration.request.ApiMethodGeneralInfoRequest;
 import com.example.configuration.request.ConfigGeneralInfoRequest;
 import com.example.configuration.request.TiersGeneralInfoRequest;
 import com.example.configuration.request.TiersRequest;
-import com.jayway.jsonpath.JsonPath;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -331,11 +329,11 @@ public class TiersConfigurationService {
         if (request.isPaginated()) {
             apiMethod.setPaginationParamName(request.getPaginationParamName());
             apiMethod.setPageSizeParamName(request.getPageSizeParamName());
-            apiMethod.setPageSize(10); // Valeur par défaut de pageSize
+            apiMethod.setPageSize(10); // Valeur par défaut
             apiMethod.setTotalPagesFieldInResponse(request.getTotalPagesFieldInResponse());
         }
         apiMethodRepository.save(apiMethod);
-        System.out.println("APIMethod saved: " + apiMethod); // Log de confirmation
+        System.out.println("APIMethod saved: " + apiMethod);
         request.getFieldMappings().forEach(mapping -> {
             FieldMapping fieldMapping = new FieldMapping();
             fieldMapping.setApiMethod(apiMethod);
@@ -345,7 +343,7 @@ public class TiersConfigurationService {
 
             try {
                 fieldMappingRepository.save(fieldMapping);
-                System.out.println("FieldMapping saved: " + fieldMapping); // Log de confirmation
+                System.out.println("FieldMapping saved: " + fieldMapping);
             } catch (Exception e) {
                 System.err.println("Error saving field mapping: " + e.getMessage());
                 throw new RuntimeException("Error saving field mapping", e);
@@ -374,6 +372,12 @@ public class TiersConfigurationService {
                 fieldMappingRepository.save(fieldMapping);
             }
         });
+    }
+    @Transactional
+    public RestAPIConfiguration getConfigById(Long configId) {
+        Integer currentTenantId = getCurrentTenantId();
+        return restAPIConfigRepository.findByIdAndTenantid(configId, currentTenantId)
+                .orElseThrow(() -> new RuntimeException("Configuration non trouvée avec l'ID: " + configId + " pour ce locataire"));
     }
 
 

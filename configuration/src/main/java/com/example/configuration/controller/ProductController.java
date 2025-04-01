@@ -63,11 +63,8 @@ public class ProductController {
     }
 
 
-   // @GetMapping("/configs")
-   // public ResponseEntity<List<RestAPIConfiguration>> getConfigsByTiersNom(@RequestParam String nomTiers) {
-    //    List<RestAPIConfiguration> configs = tiersConfigurationService.getConfigurationsByTiersNom(nomTiers);
-    //    return ResponseEntity.ok(configs);
-  //  }
+
+
     @GetMapping("/current")
     public ResponseEntity<?> getCurrentTenantId() {
         try {
