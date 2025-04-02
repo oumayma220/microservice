@@ -429,7 +429,6 @@ public class ProductMappingService {
 
     public List<Product> importProductsForTier(Long tierId) {
         logger.info("Début de l'importation des produits pour le tier : {}", tierId);
-
         Tiers tier = tiersRepository.findById(tierId)
                 .orElseThrow(() -> new RuntimeException("Tier not found with ID: " + tierId));
         List<Product> allProducts = new ArrayList<>();
@@ -451,11 +450,9 @@ public class ProductMappingService {
                 logger.warn("Aucune méthode GET trouvée pour la configuration : {}", configName);
                 continue;
             }
-
             for (APIMethod apiMethod : getApiMethods) {
                 String endpoint = apiMethod.getEndpoint();
                 logger.info("Traitement de l'endpoint GET : {} pour la configuration : {}", endpoint, configName);
-
                 try {
                     List<Product> productsFromEndpoint = importProducts(configName, endpoint);
                     logger.info("Nombre de produits récupérés depuis {} : {}", endpoint, productsFromEndpoint.size());
