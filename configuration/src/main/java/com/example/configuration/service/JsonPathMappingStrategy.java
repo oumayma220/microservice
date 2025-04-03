@@ -59,7 +59,6 @@ import java.util.Map;
 
         @Override
         public void mapFieldstest(Product product, Map<String, Object> data, FieldMappingDTO fieldMappingDTO) {
-            // If you need any special handling, you can override the default implementation
             MappingStrategy.super.mapFieldstest(product, data, fieldMappingDTO);
         }
     }

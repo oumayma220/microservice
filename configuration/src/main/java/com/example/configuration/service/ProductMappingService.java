@@ -126,15 +126,21 @@ public class ProductMappingService {
 
             List<Map<String, Object>> pageResults;
 
-            if (apiMethod.getContentFieldInResponse() != null && !apiMethod.getContentFieldInResponse().isEmpty()) {
-                try {
+            try {
+                if (apiMethod.getContentFieldInResponse() != null && !apiMethod.getContentFieldInResponse().isEmpty()) {
                     pageResults = JsonPath.read(responseJson, apiMethod.getContentFieldInResponse());
-                } catch (Exception e) {
-                    logger.error("Erreur lors de la lecture du contentFieldInResponse '{}' : {}", apiMethod.getContentFieldInResponse(), e.getMessage());
-                    break;
+                } else {
+                    Object rootResponse = JsonPath.read(responseJson, "$");
+
+                    if (rootResponse instanceof List) {
+                        pageResults = (List<Map<String, Object>>) rootResponse;
+                    } else {
+                        logger.error("Réponse racine non exploitable comme une liste d'objets.");
+                        break;
+                    }
                 }
-            } else {
-                logger.warn("ContentFieldInResponse non défini, impossible d'extraire les données !");
+            } catch (Exception e) {
+                logger.error("Erreur lors de la lecture du contenu de la réponse API : {}", e.getMessage());
                 break;
             }
 
@@ -176,7 +182,6 @@ public class ProductMappingService {
             throw new RuntimeException("Réponse API vide ou nulle.");
         }
 
-        // Conversion de la réponse en JSON
         String responseJson;
         try {
             responseJson = objectMapper.writeValueAsString(apiResponse);
@@ -406,7 +411,6 @@ public class ProductMappingService {
                     logger.info("Méthode ignorée  : {} pour la configuration : {}", apiMethod.getHttpMethod(), configName);
                     continue;
                 }
-
                 String endpoint = apiMethod.getEndpoint();
                 logger.info("Traitement de l'endpoint : {} pour la configuration : {}", endpoint, configName);
 
@@ -420,7 +424,6 @@ public class ProductMappingService {
                 }
             }
         }
-
         logger.info("Importation terminée. Nombre total de produits récupérés : {}", allProducts.size());
 
         return allProducts;
@@ -441,11 +444,9 @@ public class ProductMappingService {
         for (RestAPIConfiguration config : configurations) {
             String configName = config.getConfigName();
             logger.info("Traitement de la configuration : {}", configName);
-
             List<APIMethod> getApiMethods = config.getApiMethods().stream()
                     .filter(method -> "GET".equalsIgnoreCase(method.getHttpMethod()))
                     .collect(Collectors.toList());
-
             if (getApiMethods.isEmpty()) {
                 logger.warn("Aucune méthode GET trouvée pour la configuration : {}", configName);
                 continue;
@@ -463,7 +464,6 @@ public class ProductMappingService {
                 }
             }
         }
-
         logger.info("Importation terminée pour le tier {}. Nombre total de produits récupérés : {}",
                 tierId, allProducts.size());
 
