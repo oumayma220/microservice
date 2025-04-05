@@ -192,10 +192,16 @@ public class ConfigController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Configuration non trouvée pour cet ID et tenant.");
         }
     }
+    @GetMapping("/config/apimethod/{apiMethodId}")
+    public RestAPIConfiguration getConfigByApiMethod(@PathVariable Long apiMethodId) {
 
-
-
+        return tiersConfigurationService.getConfigByApiMethodId(apiMethodId);
     }
+
+
+
+
+}
 
 
 

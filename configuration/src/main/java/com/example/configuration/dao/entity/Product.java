@@ -16,4 +16,6 @@ public class Product {
     private String url;
     private Double  price;
     private String reference ;
+    private String tierName;
+
 }

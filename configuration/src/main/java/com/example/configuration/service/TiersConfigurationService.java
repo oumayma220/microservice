@@ -379,6 +379,21 @@ public class TiersConfigurationService {
         return restAPIConfigRepository.findByIdAndTenantid(configId, currentTenantId)
                 .orElseThrow(() -> new RuntimeException("Configuration non trouvée avec l'ID: " + configId + " pour ce locataire"));
     }
+    public RestAPIConfiguration getConfigByApiMethodId(Long apiMethodId) {
+        Integer currentTenantId = getCurrentTenantId();
+
+        APIMethod apiMethod = apiMethodRepository.findById(apiMethodId)
+                .orElseThrow(() -> new RuntimeException("APIMethod non trouvée avec l'ID: " + apiMethodId));
+
+        RestAPIConfiguration config = apiMethod.getRestAPIConfig();
+
+        if (config == null || !config.getTenantid().equals(currentTenantId)) {
+            throw new RuntimeException("Configuration non trouvée ou n'appartient pas au locataire actuel.");
+        }
+
+        return config;
+    }
+
 
 
 

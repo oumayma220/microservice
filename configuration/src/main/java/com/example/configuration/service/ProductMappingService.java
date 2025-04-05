@@ -394,38 +394,54 @@ public class ProductMappingService {
     public List<Product> importAllProductsFromAllTiers() {
         List<Product> allProducts = new ArrayList<>();
         List<RestAPIConfiguration> configurations = restAPIConfigRepository.findAll();
+
         if (configurations == null || configurations.isEmpty()) {
             logger.warn("Aucune configuration API trouvée.");
             return allProducts;
         }
+
         for (RestAPIConfiguration config : configurations) {
-            String configName = config.getConfigName();
-            logger.info("Traitement de la configuration : {}", configName);
-            List<APIMethod> apiMethods = config.getApiMethods();
-            if (apiMethods == null || apiMethods.isEmpty()) {
-                logger.warn("Aucune méthode API trouvée pour la configuration : {}", configName);
+            // Récupérer le tiers associé à cette configuration
+            Tiers tier = config.getTiers();  // Assure-toi que RestAPIConfiguration a une méthode getTiers()
+            if (tier == null) {
+                logger.warn("Aucun tiers associé trouvé pour la configuration : {}", config.getConfigName());
                 continue;
             }
+
+            String tierName = tier.getNom(); // Nom du tiers
+            logger.info("Traitement de la configuration : {} pour le tiers : {}", config.getConfigName(), tierName);
+
+            List<APIMethod> apiMethods = config.getApiMethods();
+            if (apiMethods == null || apiMethods.isEmpty()) {
+                logger.warn("Aucune méthode API trouvée pour la configuration : {}", config.getConfigName());
+                continue;
+            }
+
             for (APIMethod apiMethod : apiMethods) {
                 if (!"GET".equalsIgnoreCase(apiMethod.getHttpMethod())) {
-                    logger.info("Méthode ignorée  : {} pour la configuration : {}", apiMethod.getHttpMethod(), configName);
+                    logger.info("Méthode ignorée : {} pour la configuration : {}", apiMethod.getHttpMethod(), config.getConfigName());
                     continue;
                 }
+
                 String endpoint = apiMethod.getEndpoint();
-                logger.info("Traitement de l'endpoint : {} pour la configuration : {}", endpoint, configName);
+                logger.info("Traitement de l'endpoint : {} pour la configuration : {}", endpoint, config.getConfigName());
 
                 try {
-                    List<Product> productsFromEndpoint = importProducts(configName, endpoint);
+                    List<Product> productsFromEndpoint = importProducts(config.getConfigName(), endpoint);
+
+                    // Ajouter le nom du tiers à chaque produit
+                    productsFromEndpoint.forEach(product -> product.setTierName(tierName));
+
                     logger.info("Nombre de produits récupérés depuis {} : {}", endpoint, productsFromEndpoint.size());
                     allProducts.addAll(productsFromEndpoint);
                 } catch (Exception e) {
                     logger.error("Erreur lors de l'importation des produits pour config '{}' et endpoint '{}': {}",
-                            configName, endpoint, e.getMessage(), e);
+                            config.getConfigName(), endpoint, e.getMessage(), e);
                 }
             }
         }
-        logger.info("Importation terminée. Nombre total de produits récupérés : {}", allProducts.size());
 
+        logger.info("Importation terminée. Nombre total de produits récupérés : {}", allProducts.size());
         return allProducts;
     }
 

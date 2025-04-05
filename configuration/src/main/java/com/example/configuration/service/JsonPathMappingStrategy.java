@@ -1,5 +1,4 @@
 package com.example.configuration.service;
-
 import com.example.configuration.dao.entity.FieldMapping;
 import com.example.configuration.dao.entity.Product;
 import com.example.configuration.dto.FieldMappingDTO;
@@ -8,19 +7,14 @@ import com.jayway.jsonpath.JsonPath;
 import net.minidev.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Map;
-
-
     public class JsonPathMappingStrategy implements MappingStrategy {
         private static final Logger logger = LoggerFactory.getLogger(JsonPathMappingStrategy.class);
         private static final ObjectMapper objectMapper = new ObjectMapper();
-
         @Override
         public void mapFields(Product product, Map<String, Object> data, FieldMapping fieldMapping) {
             String source = fieldMapping.getSource();
             String target = fieldMapping.getTarget();
-
             try {
                 String effectiveSource = source;
 
